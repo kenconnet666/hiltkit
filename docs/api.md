@@ -413,7 +413,7 @@ const brand = defineTheme(lightTheme, { name: 'brand', colors: { accent: '#0B6E4
 ```tsx
 const styles = create({
   row: { color: '_textSecondary', borderBottomColor: '_borderWeak', paddingBlock: '_sm', borderRadius: '_sm' },
-  fade: { transition: \`opacity \${t.durations.enter} \${t.easings.enter}\` },
+  fade: { transition: `opacity ${t.durations.enter} ${t.easings.enter}` },
 });
 ```
 
