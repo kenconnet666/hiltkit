@@ -1,0 +1,24 @@
+{
+  "name": "hiltkit-experiments",
+  "private": true,
+  "type": "module",
+  "description": "细粒度框架选型实验，只用于取数据，不是正式代码",
+  "dependencies": {
+    "@babel/core": "8.0.10",
+    "@babel/plugin-syntax-jsx": "latest",
+    "@babel/plugin-transform-typescript": "latest",
+    "@preact/signals-core": "latest",
+    "@solidjs/signals": "2.0.0-rc.0",
+    "@vue/reactivity": "3.5.44",
+    "alien-signals": "3.2.1",
+    "babel-preset-solid": "1.9.16",
+    "esbuild": "0.28.2",
+    "playwright": "1.64.1",
+    "solid-js": "1.9.18",
+    "svelte": "5.57.3",
+    "vite": "8.3.5",
+    "vue": "3.5.44",
+    "vue36": "npm:vue@3.6.0-rc.14",
+    "vue-reactivity-36": "npm:@vue/reactivity@3.6.0-rc.14"
+  }
+}

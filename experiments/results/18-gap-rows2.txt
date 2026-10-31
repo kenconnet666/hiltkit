@@ -1,0 +1,186 @@
+CPU load at start: 23%
+## 创建 1 万行（Chromium，每轮新页面，交替，15 轮）
+
+| 版本 | 脚本中位 ms | 脚本最小 | 脚本最大 | 含布局中位 ms | 含布局最小 | 含布局最大 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 手写 createElement | 57 | 52 | 68 | 540 | 490 | 574 |
+| 手写 cloneNode | 65 | 57 | 88 | 536 | 498 | 617 |
+| Vapor | 99 | 88 | 124 | 576 | 519 | 647 |
+| Vue 3.5 | 119 | 105 | 131 | 631 | 560 | 687 |
+| hilt | 195 | 171 | 211 | 687 | 648 | 735 |
+| hilt +noMove | 167 | 158 | 201 | 637 | 600 | 740 |
+| hilt +noMove+fragment | 146 | 136 | 173 | 626 | 583 | 721 |
+| hilt +noMove+fragment+text | 141 | 129 | 164 | 633 | 574 | 704 |
+| hilt 全部(不含委托) | 143 | 129 | 165 | 628 | 592 | 689 |
+| hilt 全部+委托 | 121 | 110 | 152 | 604 | 581 | 697 |
+
+## 每行的 DOM 调用次数（建 1000 行）
+
+- 手写 createElement：共 18.0；createElement 6.0，appendChild 6.0，textContent= 3.0，addEventListener 2.0，className= 1.0
+- 手写 cloneNode：共 6.0；data= 2.0，addEventListener 2.0，cloneNode 1.0，appendChild 1.0
+- Vapor：共 7.0；addEventListener 2.0，nodeValue= 2.0，cloneNode 1.0，className= 1.0，insertBefore 1.0
+- Vue 3.5：共 19.0；createElement 6.0，insertBefore 6.0，textContent= 3.0，addEventListener 2.0，className= 2.0
+- hilt：共 24.0；insertBefore 11.0，createElement 6.0，createTextNode 3.0，addEventListener 2.0，createDocumentFragment 1.0，setAttribute 1.0
+- hilt +noMove：共 23.0；insertBefore 10.0，createElement 6.0，createTextNode 3.0，addEventListener 2.0，createDocumentFragment 1.0，setAttribute 1.0
+- hilt +noMove+fragment：共 21.0；insertBefore 9.0，createElement 6.0，createTextNode 3.0，addEventListener 2.0，setAttribute 1.0
+- hilt +noMove+fragment+text：共 19.0；insertBefore 7.0，createElement 6.0，textContent= 2.0，addEventListener 2.0，createTextNode 1.0，setAttribute 1.0
+- hilt 全部(不含委托)：共 19.0；insertBefore 7.0，createElement 6.0，textContent= 2.0，addEventListener 2.0，createTextNode 1.0，setAttribute 1.0
+- hilt 全部+委托：共 17.0；insertBefore 7.0，createElement 6.0，textContent= 2.0，createTextNode 1.0，setAttribute 1.0，addEventListener 0.0
+
+## CPU 分布（未压缩产物，建 1 万行 3 次的平均，ms）
+
+### 手写 createElement：DOM 51，GC 5，JS 33
+
+   28.5  create
+   22.1  appendChild
+   20.0  createElement
+    8.9  addEventListener
+    5.1  (garbage collector)
+    4.3  el
+    0.4  buildData
+
+### 手写 cloneNode：DOM 64，GC 5，JS 26
+
+   33.5  cloneNode
+   25.7  create
+   18.3  appendChild
+   11.7  addEventListener
+    5.0  (garbage collector)
+    0.6  buildData
+
+### Vapor：DOM 64，GC 10，JS 52
+
+   30.8  cloneNode
+   22.4  insertBefore
+   11.3  _child
+   10.6  addEventListener
+    9.6  (garbage collector)
+    9.3  setText
+    5.6  (anonymous)
+    4.4  _next
+    3.8  setClassName
+    2.7  register
+    1.7  on
+    1.5  mount
+    1.1  renderList
+    0.9  cleanup
+
+### Vue 3.5：DOM 70，GC 13，JS 66
+
+   32.7  insertBefore
+   27.3  createElement
+   20.5  setElementText
+   12.6  (garbage collector)
+    9.6  addEventListener
+    6.4  patchClass
+    6.3  (anonymous)
+    6.0  mountElement
+    3.0  createBaseVNode
+    2.7  cloneIfMounted
+    2.4  mountChildren
+    2.4  patch
+    1.9  insert
+    1.8  parseName
+
+### hilt：DOM 138，GC 13，JS 87
+
+   69.8  insertBefore
+   25.2  createElement
+   20.7  createTextNode
+   13.2  (garbage collector)
+   13.2  addEventListener
+   12.3  (anonymous)
+   12.0  renderValue
+   10.3  renderElement
+    7.4  dynamicSources
+    5.8  setAttribute
+    5.3  applyProps
+    3.9  createRow
+    3.8  link2
+    3.7  createDocumentFragment
+
+### hilt +noMove：DOM 122，GC 15，JS 84
+
+   52.0  insertBefore
+   27.7  createElement
+   17.9  createTextNode
+   15.0  (garbage collector)
+   13.6  addEventListener
+   13.0  renderValue
+   11.7  (anonymous)
+    8.0  renderElement
+    6.9  setAttribute
+    5.9  dynamicSources
+    5.3  applyProp
+    4.1  createRow
+    3.5  link2
+    3.4  applyProps
+
+### hilt +noMove+fragment：DOM 96，GC 16，JS 88
+
+   39.2  insertBefore
+   24.7  createElement
+   17.4  createTextNode
+   16.2  (garbage collector)
+   13.2  renderElement
+    9.7  addEventListener
+    9.2  renderValue
+    9.2  (anonymous)
+    7.9  dynamicSources
+    6.7  link2
+    5.3  applyProp
+    4.9  setAttribute
+    3.7  createRow
+    3.4  tokens
+
+### hilt +noMove+fragment+text：DOM 87，GC 15，JS 102
+
+   36.1  insertBefore
+   29.4  renderElement
+   23.4  createElement
+   14.8  (garbage collector)
+   14.2  addEventListener
+   11.6  (anonymous)
+    9.8  renderValue
+    7.9  createTextNode
+    5.3  setAttribute
+    4.7  swap
+    4.5  dynamicSources
+    3.7  createRow
+    3.4  tokens
+    3.1  applyProp
+
+### hilt 全部(不含委托)：DOM 86，GC 13，JS 90
+
+   33.9  insertBefore
+   28.7  renderElement
+   26.3  createElement
+   13.5  addEventListener
+   12.7  (garbage collector)
+   11.5  (anonymous)
+    6.4  createTextNode
+    5.8  renderValue
+    5.5  setAttribute
+    4.9  createRow
+    4.2  applyProps
+    3.8  swap
+    3.8  applyProp
+    2.8  toRow
+
+### hilt 全部+委托：DOM 65，GC 13，JS 89
+
+   32.8  insertBefore
+   25.4  renderElement
+   21.0  createElement
+   13.3  (garbage collector)
+   11.7  (anonymous)
+    6.7  tokens
+    6.3  renderValue
+    6.3  createTextNode
+    5.5  applyProps
+    5.5  createRow
+    5.1  setAttribute
+    4.9  swap
+    3.2  children
+    2.4  applyProp
+exit=0

@@ -1,0 +1,252 @@
+## sx、class、style 落到同一个元素
+
+ok   静态 class 跨层拼接，只有一个生成类
+ok   底层样式与上层动态值生效
+ok   使用方的 class 与 sx 都生效
+ok   sx 变化：引擎的类换了，别人的类（u、box、inner、第三方、过渡）都在
+ok   class 变化：只换 u → v，生成类、第三方类不动
+ok   sx 变回：恢复组件颜色，使用方的 v 与第三方类仍在
+ok   props.sx 转进组件自己的 sx 数组：使用方的静态项生效
+ok   props.sx 里使用方的动态项（hot && …）变化也能传过来
+ok   使用方 style 与引擎变量并存
+ok   改使用方 style：引擎变量、第三方行内样式都在
+ok   使用方 style 去掉一个属性：只删它自己的
+ok   动态值变化：只改行内变量（类不变），不碰使用方 style
+ok   style 写成字符串：解析后与引擎变量并存
+ok   style 字符串变了：只改它自己的属性
+ok   无 sx 的元素：class={x} 变化不冲掉第三方类
+ok   sx 写字面量对象生效
+ok   静态 sx（create 的命名空间）不起 effect
+ok   静态数组 / 字面量对象 / 常量参数的调用不起 effect
+ok   一半静态一半动态：只起引擎的一个 watch effect（不是整段）
+ok   两个动态项仍是一个 effect
+ok   只有 class={x} 动态：一个 effect
+ok   class 动态 + sx 部分动态：各一个
+     effect 计数：static {"effects":0,"watchers":0}；staticArray {"effects":0,"watchers":0}；staticCall {"effects":0,"watchers":0}；mixed {"effects":0,"watchers":1}；dynamicCall {"effects":0,"watchers":1}；mixedTwo {"effects":0,"watchers":1}；classOnly {"effects":1,"watchers":0}；classAndSx {"effects":1,"watchers":1}
+ok   对照：旧运行时在 sx 变化时冲掉了第三方类（本次修好）
+ok   对照：旧运行时在 class 变化时冲掉了第三方类（本次修好）
+
+## 配方
+
+ok   defaults：不传档位时 solid / md
+ok   基础样式与 token 短写生效
+ok   部件属性包带 data-scope / data-part
+ok   部件各自读自己的档位：icon 宽度跟 size（md=16）
+ok   compound：solid + lg 才有 paddingInline 24
+ok   布尔档位 block（true 键）
+ok   使用方的 sx 排在配方之后，赢过档位
+ok   活档位 size 变了：root 跟着变，compound 生效
+ok   size 变化只求值读了 size 的部件（root、icon）：2 次，label 不求值
+ok   variant 变化：只有 root 求值（1 次），compound 失效
+ok   档位设成同一个值：不求值
+ok   主题层：给配方没有的档位 xl 取值，扩展的 base 排在配方后（圆角 99）
+ok   主题层之后才是使用方的 sx
+ok   主题层只管子树：外面的按钮不受影响
+ok   响应式档位 size={{ base: sm, md: lg }}：窄屏 sm（12px），宽屏 lg（16px，且 compound 不匹配）
+ok   {...s.root} 展开不起 effect（属性包是稳定的）：写死档位的按钮 2 个部件 0 个 effect
+ok   写死的档位：创建时算一次，没有 watch（watch 只来自 live 这一个按钮的 root、icon）
+     5000 个实例只读 root：3 部件配方 10.4 ms，40 部件配方 6.0 ms；读全部 40 个部件 200 个实例 9.7 ms
+     片段求值次数：3 部件 2，40 部件 2（只读了 root）
+ok   部件惰性：40 部件的配方只读 root 时，只为 root 算样式（2 个档位 × 1 部件）
+ok   部件惰性：40 部件与 3 部件的实例成本同量级（2 倍以内）
+
+## 条件（别名、容器查询、when.*）
+
+ok   默认色
+ok   _selected：状态变了只改 aria-selected，颜色跟着变，类名不变
+ok   使用方只覆盖 _selected：选中色变了，默认色与别的条件保留
+ok   取消选中后，使用方的覆盖只在选中时才有
+ok   _disabled 认 aria-disabled
+ok   _hover 与别名并存
+ok   _open 认第三方设的 data-state="open"（不需要任何 JS 状态）
+ok   属性去掉后恢复
+ok   defineConditions：自定义 _loading（属性选择器）
+ok   defineConditions：自定义 _md（@media 断点，视口 1200 宽）
+ok   @starting-style 当条件键：规则被浏览器接受
+ok   defineConditions 校验：不以 _ 开头、盖掉内置别名、值不是选择器 / @ 规则都报错
+ok   @container：容器 300 宽时不生效
+ok   @container：容器变宽后生效（跟容器不跟视口）
+ok   when.ancestor 平时不生效
+ok   when.ancestor(:hover, marker)：祖先悬停时子元素变色
+     4 个布尔状态走遍 16 种组合：条件类写法出现 16 个不同的类名，别名写法 1 个；样式表共新增 15 条规则、1588 字节
+ok   别名写法：16 种状态组合始终同一个类
+ok   条件类写法：每种组合各一个组合类（2^4）
+ok   全开时两种写法算出的样式相同
+
+## 主题
+
+ok   根上的浅色：行文字黑、背景白
+ok   嵌套主题：内部 section 深色
+ok   嵌套主题：深色里再嵌浅色（浅色主题没有覆盖 space，沿用外层深色的 10px 间距）
+ok   局部主题：theme 与样式写在同一个 sx，只影响这个元素
+ok   运行时取色：themeStyle 写成行内变量
+ok   两个主题叠在同一个 sx：同组后者覆盖，元素上只有组合类与一个主题类
+     切主题（200 行）：DOM 改动 ["attributes:app:class"]，耗时（含强制取值）12 ms
+ok   换主题：组件没有重新渲染
+ok   换主题：整个页面只有根元素改了一次 class
+ok   换主题：行的颜色跟着变
+ok   换主题：嵌套的局部主题不受外层影响（内部浅色仍是浅色）
+ok   换回浅色
+ok   取色器连续变化 51 次：themeStyle 不新增规则
+     createTheme 每个颜色一个类：50 个不同颜色新增 50 条规则（所以运行时用户输入用 themeStyle）
+ok   对照：createTheme 每个新颜色一条规则
+ok   写错的 token 在第一次用到时报错，带属性名和组
+
+## 样式优先级：使用方 CSS / Tailwind 怎么覆盖组件
+
+| 场景 | `.c`（默认，.c.c 抬特异性） | `:where(.c)` | `@layer vtp`（不声明层顺序） | `@layer components` + 引擎声明 `theme, base, components, utilities` |
+| --- | --- | --- | --- | --- |
+| 使用方单类选择器 vs 组件基础色（期望 user 赢） | user ✓ | user ✓ | user ✓ | user ✓ |
+| 使用方单类选择器 vs 组件 @media 里的色（视口 1200）（期望 user 赢） | component ✗ | user ✓ | user ✓ | user ✓ |
+| 使用方单类选择器 vs 组件 :hover 色（悬停时）（期望 user 赢） | component ✗ | user ✓ | user ✓ | user ✓ |
+| 使用方 `.card .x`（特异性 0,2,0）vs 组件 @media 色（期望 user 赢） | user ✓ | user ✓ | user ✓ | user ✓ |
+| Tailwind v4 工具类（@layer utilities）vs 组件基础色（期望 user 赢） | component ✗ | component ✗ | user ✓ | user ✓ |
+| Tailwind v4 工具类（@layer utilities）vs 组件 @media 色（期望 user 赢） | component ✗ | component ✗ | user ✓ | user ✓ |
+| Tailwind preflight（@layer base：button{padding:0}）vs 组件 padding 8px（期望 component 赢） | component ✓ | component ✓ | user ✗ | component ✓ |
+
+ok   plain：使用方单类能盖过组件的基础值
+ok   plain：组件的 @media / :hover 条件块压过使用方单类（.c.c 特异性更高）——已知限制
+ok   plain：未分层的组件样式压过 Tailwind 的 @layer utilities
+ok   plain：未分层的组件样式压过 preflight（组件的 padding 保住）
+ok   :where：使用方单类在基础、@media、:hover 下都能盖过
+ok   :where：仍然压过 @layer 里的工具类与 preflight（分层的永远输给未分层的）
+ok   layer（声明顺序）：未分层的使用方 CSS 一律赢，Tailwind 工具类赢，preflight 输给组件
+ok   layer（不声明顺序）：引擎的层排在最前，Tailwind 的 preflight 反过来压过组件 padding——必须配 layerOrder
+
+## SSR
+
+     服务端渲染 8.08 ms，HTML 479 字节，样式标签 933 字节
+     样式标签：11 个名字（类名、关键帧、变量组、主题）：--s-colors --s-space x9svhe9 x182u809 kqrz25x x84hyq8 x1xt4977 xw95a2a x1lw9n26 x13ndqcb xcoemb
+ok   样式标签带 data-names，包含用到的类、关键帧、变量组、两套候选主题
+ok   HTML 里的元素是变量写法的动态样式（服务端一律写成变量）
+ok   没有 JS 时静态与动态样式已生效（红色、宽 40px、字面量 sx）
+ok   没有 JS 时配方的档位样式已生效
+ok   接管时没有任何 DOM 改动（含 head、style 标签）
+ok   接管后节点还是原来那些，HTML 一字不差
+ok   接管时一条规则都没有重新插入（insertRule 0 次）
+ok   接管后只有一张引擎的 <style>，没有新增
+     接管耗时 10.70 ms
+ok   接管后动态值更新：只改变量，类不变
+ok   接管后条件项更新：换类，使用方 class（user）还在
+ok   接管后使用方 class 更新
+ok   接管后配方档位更新
+ok   接管后新出现的样式会插进同一张表
+ok   接管后 context 仍可用
+ok   防闪烁：没存偏好 + 系统深色 → 首屏（没有任何应用 JS）就是深色底
+ok   防闪烁：存了 light 覆盖系统深色
+ok   防闪烁：存了 system + 系统浅色 → 浅色
+ok   300 次请求（动态值每次不同）：规则表一条没多（动态值写成变量，不新增类）
+     5000 个请求各带一个不同的字面量 sx：规则表 11 → 2010 个名字
+ok   字面量 sx 随请求内容变化：规则表有上限（volatile 限量）
+ok   被限量挤掉的规则再次出现时会补回，不会输出没有样式的类
+ok   最近的请求规则在
+
+## 开发体验：可读类名、devtools、热更新
+
+ok   开发模式编译：顶层 create / recipe 被包上 hotStyles，create 带可读名字
+ok   生产编译：没有 hotStyles，也没有名字
+     [开发] 元素类名：a=dev-styles-root-x1wqtbkp  b=Button-root_Button-size-sm-root-xjdxelm
+     [开发] <style> 文本（devtools 元素面板里看到的）：
+       /* dev.styles.root */
+       .dev-styles-root-x1wqtbkp{color:rgb(1, 0, 0)}
+       /* Button.root + Button.size=sm.root */
+       .Button-root_Button-size-sm-root-xjdxelm{color:rgb(2, 0, 0);font-size:11px}
+       /* Manual.styles.root */
+       .Manual-styles-root-x1oer1b3{color:rgb(3, 0, 0)}
+ok   开发：类名可读（文件.变量.命名空间 + 哈希）
+ok   开发：配方的类名带组件名
+ok   开发：<style> 里有规则原文与“由哪些片段组成”的注释
+ok   开发：规则照常生效
+ok   热更新 create：返回旧对象，元素的类名不变，颜色原地生效
+ok   热更新 create：样式表里这个类只有一份规则（原地改写，没有堆积）
+ok   热更新 recipe：同样原地生效，类名不变
+     [生产] 元素类名：a=x1wqtbkp  b=xjdxelm
+ok   生产：类名只有哈希
+ok   生产：<style> 元素文本是空的（走 insertRule，更快；devtools 的样式面板仍看得到规则）
+ok   生产：规则照常生效
+
+## 体积（esbuild minify + gzip -9 / brotli -11，字节，含 alien-signals）
+
+| 内容 | minify | gzip | brotli |
+| --- | --- | --- | --- |
+| A 不用 sx（只有运行时：class / style / 事件 / 列表 / 水合） | 8611 | 3683 | 3372 |
+| B A + create + 静态 sx | 25644 | 10390 | 9402 |
+| C B + 动态样式与条件项（bind、select，编译器的输出） | 25959 | 10515 | 9506 |
+| D C + recipe | 30148 | 12108 | 10971 |
+| E C + 主题（defineTokens、createTheme、themeStyle） | 27806 | 11176 | 10109 |
+| F 全部（C + recipe + 主题 + keyframes + provideStyles/useRecipe + renderStyleTag/themeBootScript + defineConditions） | 34511 | 13733 | 12455 |
+| （对照）A 用 03-publish 的原型运行时 | 6900 | 2915 | 2682 |
+
+     引擎增量（gzip）：静态 sx 6707，+动态/条件 125，+recipe 1593，+主题 661，全部相对 A 10050；
+     运行时本身比原型运行时多（class / style / sx 的写入口）：gzip 768 字节
+
+ok   摇树：不用 sx 的应用，产物里没有引擎（没有样式表、没有哈希）
+ok   摇树：用了 create 才带上引擎
+ok   摇树：不用 recipe 时没有 recipe 的代码（档位组合缓存）
+ok   摇树：不用主题时没有主题的代码（防闪烁脚本、themeStyle）
+## 预编译组件库经 ...rest 转交 sx
+
+ok   库的编译产物（Box）只 import 运行时，没有引擎
+ok   库的编译产物（Card）用公开入口 @hilt/css 与 @hilt/css/abi
+ok   使用方的 sx 经库的 ...rest 落到元素上（margin 7、绿色、宽 30px）
+ok   库自己的 class 还在；库有样式时使用方的 sx 排在后面覆盖（绿色盖过库的红色）
+ok   使用方动态参数（库的 Box 只转交）变化：只改变量
+## 首屏：300 个不同的样式组第一次渲染（运行时：展开 + 组合 + 哈希 + 插规则）
+
+     300 个样式组：JS 56.0 ms（187 µs / 组），挂元素 + 强制样式重算 6.1 ms，规则 1502 条（9 轮中位数，每轮新页面）
+     对照（04-css 的上一轮实测，同样的负载）：运行时 56.8 ms，构建期预计算 8.5 ms
+ok   首屏 300 个样式组 JS 成本在 100 ms 以内（量级断言，机器忙时放宽）
+
+## 基准（1000 行 / 按钮，9 轮中位数）
+
+### 1000 行样式更新
+
+| 场景（次数） | sx 拆分（bind/select） ms | sx 整段 effect ms | 手写类 + 元素变量 ms | 条件走 data 属性 ms |
+| --- | --- | --- | --- | --- |
+| widths ×20 | 352.3 | 405.7 | 319.5 | 340.6 |
+| oneWidth ×20 | 11.1 | 12 | 11.4 | 11.5 |
+| hot ×10 | 206.5 | 218 | 198.3 | 190.2 |
+| unrelated ×10 | 0 | 0.1 | 0 | 0.1 |
+| theme ×4 | 72.3 | 75.7 | 85.4 | 66.6 |
+| 挂载（首次渲染） | 131.5 | 126.6 | 80.6 | 131.6 |
+| 卸载（停全部 effect） | 0.5 | 0.6 | 0.6 | 0.6 |
+| 挂载后堆内存增量 KB（GC 后，含 DOM） | 4395 | 4516 | 2564 | 4506 |
+| 挂载后存活的 effect 数 | 3003 | 4003 | 3003 | 3003 |
+
+每次状态变化平均：DOM 改动（按属性名）/ CSSOM 改动 / 引擎求值（evaluations）、换类（reshapes）、新建 effect 数
+
+| 场景 | sx 拆分（bind/select） | sx 整段 effect | 手写类 + 元素变量 | 条件走 data 属性 |
+| --- | --- | --- | --- | --- |
+| widths | DOM style×1000；CSSOM 无；求值 1000，换类 0，新建 effect 0 | DOM style×1000；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM style×1000；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM style×1000；CSSOM 无；求值 1000，换类 0，新建 effect 0 |
+| oneWidth | DOM style×1；CSSOM 无；求值 1，换类 0，新建 effect 0 | DOM style×1；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM style×1；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM style×1；CSSOM 无；求值 1，换类 0，新建 effect 0 |
+| hot | DOM class×1000；CSSOM 无；求值 1000，换类 1000，新建 effect 0 | DOM class×1000；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM class×1000；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM data-hot×1000；CSSOM 无；求值 0，换类 0，新建 effect 0 |
+| unrelated | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 |
+| theme | DOM class×1；CSSOM 无；求值 1，换类 1，新建 effect 0 | DOM class×1；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM class×1；CSSOM 无；求值 1，换类 1，新建 effect 0 | DOM class×1；CSSOM 无；求值 1，换类 1，新建 effect 0 |
+
+### 1000 个按钮（配方）
+
+| 场景（次数） | 配方 button({ variant, size }) ms | 直接写 sx 数组（查表 + 条件） ms | 静态 sx（下限） ms |
+| --- | --- | --- | --- |
+| size ×10 | 287.1 | 296.6 | 7.4 |
+| variant ×10 | 70.2 | 72.8 | 6.7 |
+| unrelated ×10 | 0.1 | 0 | 0.1 |
+| 挂载（首次渲染） | 137.3 | 129.3 | 99.8 |
+| 卸载（停全部 effect） | 0.6 | 0.6 | 0.6 |
+| 挂载后堆内存增量 KB（GC 后，含 DOM） | 5094 | 4713 | 3065 |
+| 挂载后存活的 effect 数 | 3003 | 3003 | 1003 |
+
+每次状态变化平均：DOM 改动（按属性名）/ CSSOM 改动 / 引擎求值（evaluations）、换类（reshapes）、新建 effect 数
+
+| 场景 | 配方 button({ variant, size }) | 直接写 sx 数组（查表 + 条件） | 静态 sx（下限） |
+| --- | --- | --- | --- |
+| size | DOM class×2000；CSSOM 无；求值 2000，换类 2000，新建 effect 0 | DOM class×2000；CSSOM 无；求值 3000，换类 2000，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 |
+| variant | DOM class×1000；CSSOM 无；求值 1000，换类 1000，新建 effect 0 | DOM class×1000；CSSOM 无；求值 1000，换类 1000，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 |
+| unrelated | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 |
+
+ok   配方：切 size 每个按钮求值 2 次（root、icon），label 部件不求值
+ok   配方：切 variant 每个按钮求值 1 次（只有 root 用到 variant）
+ok   配方：无关状态一次求值都没有
+ok   行：各种写法逐元素算出的样式一致（初始 + 每步状态变化后）
+ok   按钮：各种写法逐元素算出的样式一致（初始 + 每步状态变化后）
+
+断言 132/132 通过

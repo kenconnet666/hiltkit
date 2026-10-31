@@ -1,0 +1,264 @@
+15-types：类型层选型实验（符文、JSX 元素属性、CSS 类型）与类型检查 / 语言服务成本
+=================================================================================
+
+环境：Windows 11，Xeon E5-2698B v3（32 线程），Node 24.18；TypeScript 7.1.0-beta（13-ts/node_modules/typescript），
+对照 7.0.2、6.0.3。测量时机器上还有 IDE、浏览器、别的 tsc 进程在跑（测量开始前 CPU 约 15~25%），
+数字有干扰，表里给了 3 轮的最小~最大；串行跑，3 轮取中位数（特别标注的除外）。
+复现：cd 15-types；npm run check（用例）；node perf/gen.mjs 300 && node perf/gen.mjs 1000；node perf/run.mjs --n=300,1000；
+node perf/lsp.mjs --n=300,1000；node perf/ablate.mjs 100 --variant=base。
+
+
+一、覆盖情况（用例：cases/*.tsx，全部通过；正例 + @ts-expect-error 反例，共 184 条反例）
+-----------------------------------------------------------------------------------------
+
+状态：OK = 类型层做到并有用例；限制 = 做到一部分，限制在第二节；做不到 = 第二节说明原因。
+
+符文（01-runes、02-components、03-bind）
+  _state / _state.raw / _state.snapshot                       OK    布尔不收窄成 false、无初始值是 T | undefined
+  _derived（let 可写）/ _derived.by                           OK    传函数给 _derived 报错并提示
+  _effect（+ .pre / .root）、_untrack                         OK    返回清理函数以外的值报错
+  _bindable / _bind（.trim .lazy .number .group，可链式）     OK    .trim 目标必须是字符串、.number 目标必须是数字
+  _component<Props>(({ a = 1, on = _bindable(false), ...rest }) => …)   OK   三种写法：类型参数、参数标注、泛型函数
+  value={_bind(x)} 对组件和原生元素同写法                     OK
+  声明 _bindable 的 prop 才可绑                               限制  类型层读不到函数体里的 _bindable，以“props 里有配套 onXxxChange 回调”为登记凭据
+  绑到只读 prop 在类型层报错                                  OK（以上述约定为前提）
+  只读 prop 不能赋值                                          做不到
+JSX（04-attrs、05-events、08-generated-attrs）
+  class 收字符串/数组/对象（clsx 规则）                       OK
+  style 收字符串或对象；长度数字报错；--x 允许                OK    csstype 默认的 Properties（长度只收字符串和 0）
+  事件 onClick；后缀 Capture/Once/Passive；组合后缀           限制  见第二节：常用事件精确类型，其余后缀走模式索引签名
+  on:名字 逃生                                                OK
+  currentTarget 是该元素类型                                  OK    HTML、SVG、自定义元素都验证
+  非布尔属性 false 合法（aria-* 等）；拦 id={cond && 'x'}     OK    枚举型“像布尔”的属性用 Booleanish，其余属性不收 false
+  布尔属性 '' 为真，"false" 报错                              OK    29 个布尔属性由 09-attr 规则表生成用例校验
+  React 拼写报错并提示（className、htmlFor…）                 OK    ALIAS 表 13 个全部校验，另加常见驼峰误写与 SVG 驼峰；报错信息里出现 WriteAs<"class">
+  ref 收回调，参数是元素或 null                               OK
+  sx 在所有元素上                                             OK    HTML、SVG、自定义元素
+  key 只在列表行                                              做不到（类型层不区分位置；任何元素都收 key）
+  自定义元素用声明合并加                                      OK    props / element / events 三项，事件连字符转驼峰（x-toggle → onXToggle）
+  SVG 元素属性                                                OK    展示属性 + 约 30 个标签的专属属性
+组件 props（02-components）
+  HtmlProps<'button'> / SvgProps<'svg'>，第二参数是受管属性   OK    连字符属性（aria-busy）靠显式 never 拦
+  children 类型                                               OK    Children = 元素 | 文本 | 数字 | 布尔 | null | 数组
+CSS（06-css、07-recipe-theme）
+  create({ root, bar: (w: number) => ({…}) })                 OK
+  sx={[styles.root, cond && styles.active, styles.bar(w), { marginTop: '_md' }]}   OK
+  token 短写补全并按属性分组、写错报错、值也可写普通 CSS      OK    padding 补全只有 space 组 8 项（探针主题里 space 有 8 个 token），color 只有 colors 组 24 项（LSP 实测）
+  条件 { default, ':hover', _selected, '@media …' } 嵌套      OK
+  defineTokens 的返回驱动 token 类型                          OK    声明合并 + typeof（选择理由见第三节）
+  recipe 推断 variant 名与取值、parts；button({ variant })校验；{...s.root} 展开   OK
+  createTheme(t, {...}) 校验是 token 的子集                   OK    也支持单个变量组；themeStyle、defineVars 同样校验
+  defineConditions 增加的别名能用                             OK    同样用声明合并登记（theme.ts 里 _loading / _md / _wide）
+
+用例数据：cases/ 约 1150 行；tsc --noEmit 本身 0.45 s 检查、0.57 s 总计、147k 实例化、97 MB（TS 7.1，92 个文件含 lib）。
+TS 7.0.2 全过；TS 6.0.3 有 1 处 TS2590（02-components.tsx 里 <input value={_bind(value)}>，6.0 的联合上限更低，7.x 没有）。
+
+
+二、做不到 / 有限制的条目与原因
+-------------------------------
+
+1. 只读 prop 不能赋值（做不到）。解构出来的是普通局部变量，TypeScript 没有“只读的解构绑定”，也没有办法让 `size = 'sm'` 报错
+   （02-components.tsx 的 ReadonlyHole 留了说明）。能在编译器里做：同一个函数内，对不是 _bindable / _state 默认值的解构绑定赋值，语法层就认得出。
+2. key 只在列表行（做不到）。JSX 表达式的类型是同一个 JSX.Element，类型层看不到“这是不是 map 的返回值”。所有元素都收 key，位置由编译器诊断。
+3. “声明了 _bindable 的 prop 才可绑”：类型层读不到函数体里的默认值，只能约定“有 onXxxChange 回调的 prop 可绑”。
+   BindableProps<{ value: string }> 一次生成 value 与 onValueChange。风险：只写 _bindable 不写回调，则调用方绑不上（报错），
+   写了回调不用 _bindable 则类型放行（运行时诊断）。_bind 的目标必须是可写变量，类型层同样看不到（_bind(a + b) 放行）。
+   Bound<T> 对 T 不变（函数类型属性逆变）：`string` 变量绑不到 `'sm'|'md'` 的 prop；可绑定的数组 prop 要声明成可变数组（string[]），readonly string[] 的 prop 绑不上 string[] 变量。
+4. 事件后缀：每个事件展开 4 个键（×16 含组合）每个标签有 440~1760 个键，成本太高（第四节）。最终方案：
+   - 无后缀：全部事件精确类型（110 个键）。
+   - 单个后缀：常用 33 个事件（click、keydown、focus、pointerdown、wheel、touchstart、scroll…）精确类型（99 个键），其余事件走 3 个模式索引签名。
+   - 组合后缀（顺序随意）：12 个模式索引签名。
+   模式索引签名的限制：后缀前的事件名不检查（onClikCapture 过得去，重复后缀 onClickCaptureCapture 也过得去）、事件对象是通用 Event
+   （要精确类型就标注参数，且要带 currentTarget：(e: MouseEvent & { currentTarget: HTMLDivElement }) => …；方法签名的双向协变保证这样的标注能通过）。
+5. 没有 token 的属性写错关键字不报错（display: 'flxe'）：csstype 的取值是开放字符串（string & {}）。有 token 的属性靠“不以下划线开头的字符串”模板联合
+   （NotToken）才能拦住 '_mdd'，副作用是这类属性的关键字补全消失（但仍合法）。
+6. 以插值开头的模板字符串写在有 token 的属性上被拒（`${t.space.md} 0` 的类型是 `${string} 0`，可能以 _ 开头）；包进 calc() 或放在字面量后面即可。
+7. 带组名的写法 '_space.md' 只校验组名，不校验组里的 token 名。全部列成字面量联合会让每个有 token 的属性补全多出 60 多条带组名的条目，排在 '_md' 前面
+   （v0 里实测，padding 补全 72 项）；改成模式 `_${组名}.${string}` 后补全只剩 8 项。写错的 token 名由引擎在第一次用到时报错（tokens.ts 的 resolveToken）。
+8. 静态样式（create 的静态条目、sx 对象字面量）不收 string 变量，动态样式（函数）才收；静态样式里不能写 --x（有索引签名会让弱类型检查失效）。
+9. data-* 用模式索引签名登记取值（false 合法）；其它连字符属性 JSX 本身不检查。
+10. 同名标签 a、script、style、title 在 HTML 与 SVG 里重名，按 HTML 处理。
+11. 组件 props 的联合属性表（<input> 的 type 分支，8 个变体）：不能给 JSX 的 LibraryManagedAttributes 无条件套映射，
+    否则 `<input />` 报 TS2590（联合过于复杂，TS 6 / 7.0 / 7.1 都是）。原生元素传进来的 C 是属性类型本身（不是函数），只对函数组件做 _bind 映射。
+
+
+三、方案选择与理由
+------------------
+
+1. defineTokens 的返回如何驱动 token 类型：选“声明合并 + typeof 登记”，不选泛型。
+   做法：`export const t = defineTokens('vtp', {...}); declare module '@hilt/css' { interface TokenSets { vtp: typeof t } }`（一行）。
+   类型层从 TokenSets 里算出每组的名字，再用模板字面量加 `_` 前缀；条件别名同理（ConditionSets）。
+   理由：
+   - API.md 里 create / recipe 是从 '@hilt/css' 全局导入的，token 本来就是全局登记（运行时 registerTokenGroup 也是全局表），类型层与运行时同构；
+     泛型方案要把 create/recipe/sx 的类型全部绑到某个 t 上（`const { create, recipe } = createCss(t)`），改变导入方式，每个组件文件都要从应用自己的模块导入。
+   - 单一来源：token 名只在 defineTokens 里写一次（对照 06 的做法：手写接口成员，名字写两遍）。
+   - 多库共存：登记键是任意名字，组件库与应用各登记各的，类型层把它们合起来；手写联合做不到合并，接口成员可以。
+   代价：多一行登记；登记是全局的，同一程序里两套互不相干的 token 会混在一起补全（泛型方案能隔离）。
+   token 补全用模板字面量联合 vs 普通联合：成本几乎一样（第四节：N=300 检查 2.05 vs 2.08 s，实例化 648k vs 650k），所以选模板字面量（单一来源）。
+2. 元素属性表：自写子集，不用 @types/react 的属性表（那是 React 拼写，我们要的是 class / for / readonly 这类 HTML 原名），csstype 只用在样式取值上。
+   csstype 全量 vs 精简（约 190 个常用属性）：N=1000 检查 6.12 vs 5.50 s（-10%），内存几乎一样，实例化 -2%。收益有限，但丢掉关键字补全（display 补全从 41 项
+   降到 11 项，精简版的关键字是手挑的几十个），所以默认用 csstype 全量，精简版仅作为可切换的对照（perf/variants.mjs）。
+3. 事件后缀：见第二节第 4 条与第四节。
+4. 类型文件按职责分目录：types/（核心、符文、JSX）、types/elements/（属性、事件、HTML、SVG）、types/css/（取值、token、条件、create/recipe、theme、登记处）。
+   性能相关的开关（属性表、token 类型、NotToken、事件）都放在独立文件里，用 tsconfig 的 paths 可以整体替换（perf/variants.mjs 就是这么做对照的）。
+5. 属性值规则与 09-attr 规则表同源：布尔属性用 BoolAttr（boolean | ''），枚举型用 Booleanish；token 的“属性 → 组”对照表由 scripts/gen-property-groups.mjs
+   从 10-css/engine/token-map.ts 生成（--check 校验同步），事件驼峰表由 scripts/check-events.mjs 对照 lib.dom 校验，布尔属性与 React 拼写用例由
+   scripts/gen-attr-cases.mjs 从属性规则表生成。
+
+
+四、成本
+--------
+
+方法：perf/gen.mjs 生成 N 个组件（每个：create（静态 + 动态 + 条件 + token）、recipe（3 个档位 + 组合档位 + 默认值）、
+HtmlProps<tag, 受管属性> + BindableProps 转发 rest、SvgProps 转发、_state/_derived/_effect、事件、class/style、_bind、列表、sx 数组），
+再生成使用方（每个组件用一次，含 _bind、sx、事件）；标签在 button/div/section/a/label 间轮换。变体 = 用 tsconfig paths 换掉某个模块。
+固定成本（0 个组件，只有类型文件与 lib）：检查 0.44 s、总 0.53 s、70 MB、43k 实例化（优化前 0.46 / 0.57 s、72 MB、83k）。
+
+4.1 主表（TS 7.1 beta，多线程 = 默认 4 个检查器，3 轮中位数；v0 = 优化前快照 perf/baseline-types，v1 = 第一步优化后快照 perf/step1-types，base = 当前 types/）
+
+| 组件数 | 变体 | 错误 | Total s | Check s（最小~最大） | 内存 MB | 实例化 | 类型 | 符号 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 300 | v0 优化前 | 0 | 5.77 | 5.56 (5.39~5.59) | 943 | 1227566 | 196393 | 1683039 |
+| 300 | v1 | 0 | 3.20 | 3.00 (2.83~3.02) | 409 | 752829 | 190147 | 805054 |
+| 300 | base 当前 | 0 | 2.29 | 2.08 (2.05~2.22) | 296 | 650456 | 189964 | 593085 |
+| 1000 | v0 优化前 | 0 | 15.98 | 15.52 (15.42~15.65) | 2770 | 2048666 | 483984 | 5071174 |
+| 1000 | v1 | 0 | 9.64 | 9.22 (9.07~9.42) | 1118 | 1759738 | 475638 | 2371789 |
+| 1000 | base 当前 | 0 | 6.56 | 6.12 (6.03~6.47) | 766 | 1711346 | 475455 | 1709020 |
+
+优化前 → 当前：N=300 检查 5.56 → 2.08 s（-63%），内存 943 → 296 MB（-69%）；N=1000 检查 15.52 → 6.12 s（-61%），内存 2770 → 766 MB（-72%）。
+每个组件约 5.7 ms 墙钟（N=1000，多线程）、24 ms（单线程）。
+
+4.2 CSS 属性表与 token 补全的对照（相对 base；N=300 / N=1000）
+
+| 变体 | N=300 Check s | 实例化 | N=1000 Check s | 内存 MB | 实例化 |
+| --- | --- | --- | --- | --- | --- |
+| base（csstype 全量 + 模板字面量 token + NotToken） | 2.08 | 650456 | 6.12 | 766 | 1711346 |
+| lite-props（精简属性表，约 190 个属性） | 1.93 (-7%) | 613580 | 5.50 (-10%) | 750 | 1674628 |
+| plain-tokens（手写字面量联合的 token 类型） | 2.05 (-1%) | 648013 | 6.09 (-0.5%) | 765 | 1708980 |
+| lite + plain | 1.96 (-6%) | 611233 | 5.26 (-14%) | 749 | 1672470 |
+| no-strict（去掉 NotToken 模板联合，不再拦 '_mdd'） | 2.12 (+2%) | 630325 | 6.18 (+1%) | 766 | 1691215 |
+
+结论：CSS 侧（属性表规模、token 联合的写法、拼错检测）加起来最多 -14%，其中 plain 与 no-strict 都在噪声内（3 轮范围 ±5%）。
+csstype 全量不是瓶颈；token 补全用模板字面量联合没有额外成本；NotToken 的拼错检测几乎免费。成本的大头在元素属性（第 4.3 节）。
+
+4.3 最贵的类型与优化前后
+
+定位方法：perf/ablate.mjs 逐项去掉一类写法（N=100，3 轮中位数，实例化相对 none 的百分比）；--generateTrace + perf/trace.mjs 看节点自身耗时。
+
+优化前（v0）                                      优化后（base）
+  none                      100%（2.59 s）          100%（1.12 s）
+  去掉 HtmlProps 转发       44%   （-56%）          69%   （-31%）
+  去掉受管属性 Omit         74%   （-26%）          99%
+  去掉使用方文件            96%（时间 -33%）        80%（时间 -23%）
+  去掉 recipe               95%                      85%
+  去掉 create               98%                      94%
+  去掉 SvgProps 转发        89%                      97%
+  去掉 _bind / 列表 / 条件 / 事件 / class / style    均在 95~100%
+
+（“去掉 HtmlProps 转发”的 200 个错误来自使用方文件缺 props，数字只表示这部分类型的体量。）
+
+最贵的类型 = 带事件的元素属性表经过 `{...rest}` / Omit / interface extends 在每个组件里重复做 O(键数) 的工作：
+  - v0 每个 HTML 元素有 110 个事件 × 16 种后缀排列 = 1760 个事件键，加上其它共约 1930 个属性键；
+  - 每个转发 HtmlProps 的组件：Omit（映射 + Exclude 一千多个键）、rest 类型（再造一千多个属性）、
+    `<button {...rest}>` 展开（再造一遍并逐个比较）、SvgProps 展开到 <svg>（同上）；
+  - trace（v1 状态、单线程、N=100）里组件文件占检查时间的 69%，其中 `<svg {...iconProps} {...s.icon}>` 一个节点每个组件约 9 ms，
+    根元素的 `{...s.root} {...rest}` 约 6.5 ms，create 约 7 ms，recipe 约 5 ms。
+
+优化（按顺序）：
+  1. 事件后缀的排列从“全部展开成属性”改成“常用事件精确展开 + 其余走模式索引签名”（第二节第 4 条）。
+     v0 1760 键 → v1（110 × 4 = 440 键 + 12 个模式）→ base（110 + 99 = 209 键 + 15 个模式）。
+     N=1000：检查 15.52 → 9.22 → 6.12 s；内存 2770 → 1118 → 766 MB；符号 5.07M → 2.37M → 1.71M。
+     对照（在 v1 上改后缀数，N=1000）：4 种后缀全展开 9.22 s；16 种排列全展开 10.25 s；只有无后缀（110 键）5.63 s。
+     观察（原因没有查清，不当作结论）：v0 的“16 种排列全展开、没有模式签名”是 15.52 s，加上 12 个组合后缀的模式签名后（属性仍是 16 种展开）
+     N=100 实例化 990k → 563k，N=300 检查 5.56 → 3.27 s；键数从 440 到 1760 之间的耗时几乎不变（9.22 vs 10.25 s），而从 110 到 440 差很多（5.63 vs 9.22 s）。
+     成本不是随键数线性增长，我没有隔离出原因（试过：给目标类型加不匹配任何属性的模式签名没有效果，说明不是“有索引签名”本身）。
+  2. 去掉 JSX.LibraryManagedAttributes 对原生元素的映射：TS2590 的正确性修复，同时避免联合属性表上的全量映射。
+  3. BoundProps：先用模式交叉在回调键里筛出 xxx，再检查 xxx 是不是 props 的成员（原来 `on${string}Change` 把原生 onChange、onSelectionChange 都当成可绑定回调）。
+     N=100 实例化 -0.4%，不是热点；保留是为了语义准确（原生 onChange 不再触发映射）。
+  4. 已试过、没采用：
+     - 用交叉类型代替 Omit（`P & { [K in Managed]?: never }`）：实例化 -18%，但检查时间 1.61 → 1.85 s（交叉类型的关系检查更慢），补全里还会留着被“删掉”的属性，放弃。
+     - 非媒体元素去掉 22 个媒体事件：实例化 -7%，时间在噪声内，没有采用。
+     - 去掉 52 个 React 拼写提示键：时间在噪声内。
+  5. “属性 → token 组”从一开始就用反向表（PropertyGroupOf，属性查组是一次属性查找）；按组存属性名联合再逐组判断 extends 的朴素写法我没有单独量，不报数字。
+
+4.4 其它编译器版本与线程数（base；3 轮中位数）
+
+| 配置 | N=300 Check s | N=1000 Check s | 说明 |
+| --- | --- | --- | --- |
+| TS 7.1 默认（4 个检查器） | 2.08 | 6.12 | |
+| TS 7.1 --checkers 2 | 4.20 | 12.39 | |
+| TS 7.1 --checkers 8 | 1.45 | 3.30 | N=1000 内存 804 MB（检查器各自缓存，实例化 1.88M） |
+| TS 7.1 --singleThreaded | 8.25（v0：17.64） | 24.41（v0：56.93） | 实例化 512k / 1.53M：多线程的实例化计数含各检查器重复的部分 |
+| TS 7.0.2 默认 | 2.59（v0：6.34） | 7.67（v0：17.96） | |
+| TS 6.0.3 | 35.36（1 轮） | 未跑 | 有 1 个 TS2590，仅供参考；比 7.1 慢约 17 倍 |
+
+4.5 语言服务（tsc --lsp，每轮冷启动新进程，3 轮中位数，ms；探针文件 src/probe.tsx 打开后依次请求）
+
+| 组件数 | 变体 | 初始化 | 首次悬停 | 再次悬停 | 悬停 sx | 改动后悬停 | 诊断 | 补全 sx.padding（首/再） | 补全 sx.color | 补全条件键 | 补全组件 prop | 补全元素属性名 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 300 | base | 236 | 236 | 1 | 39 | 45 | 76 | 11 / 1（8 项） | 4（24 项） | 3（25 项） | 18（235 项） | 9（317 项） |
+| 300 | v0 优化前 | 255 | 243 | 1 | 40 | 51 | 151 | 13 / 3（72 项） | 12（88 项） | 3（25 项） | 72（1857 项） | 20（1838 项） |
+| 1000 | base | 259 | 473 | 1 | 38 | 58 | 74 | 11 / 1（8 项） | 5（24 项） | 2（25 项） | 16（235 项） | 5（317 项） |
+| 1000 | v0 优化前 | 238 | 529 | 1 | 40 | 85 | 152 | 13 / 3（72 项） | 12（88 项） | 4（25 项） | 71（1857 项） | 22（1838 项） |
+
+另外 N=300 / 1000 的 lite-props、plain-tokens、v1 变体：首次悬停 230~250 / 495~515 ms，补全 padding 9~12 ms、color 4~6 ms，彼此差别在噪声内（原始输出：补全内容全部正确）。
+  - 补全内容正确性（每次都校验）：padding 只给 space 组（_xs _sm _md _lg _xl _none）、color 只给 colors 组、条件键含 _hover/_loading/_md（defineConditions 登记的别名）、
+    组件 prop 含 tone/value/onValueChange、元素属性名含 id/class/sx/onClick、`onC` 补出 onClick 与 onClickCapture。
+  - 首次悬停主要是项目加载（300 个组件 ≈ 0.24 s，1000 个 ≈ 0.5 s）；之后的悬停、补全都是个位数到二十毫秒。优化前组件 prop 补全 72 ms（1857 项）→ 当前 16~18 ms（235 项）。
+  - 局限：没有在 WebStorm / VS Code 里实测 TS 7.1 的 LSP；这里是直接按 LSP 协议发请求，补全项排序、片段、文档注释（JSDoc）在编辑器里的呈现没验证。
+
+4.6 对照基线：vue-tsx-pro/packages/ui（只读；tsc -p tsconfig.json --incremental false --noEmit --extendedDiagnostics，TS 7.1 beta，3 次）
+
+  2514 个文件，实例化 3128025，内存 772 MB，Check 3.62~3.72 s，Total 4.88~5.49 s（中位数 5.10 s）。
+  与 13-ts 的记录（6.16 s、754 MB）同量级；这次机器较闲。
+  同一台机器上的合成组件库（含 lib 约 90 个类型文件 + N 个组件文件 + 使用方）：
+    300 个组件：Total 2.29 s、650k 实例化、296 MB（ui 的 45% 时间、21% 实例化、38% 内存）
+    1000 个组件：Total 6.56 s、1.71M 实例化、766 MB（ui 的 129% 时间、55% 实例化、99% 内存）
+  粗略对应：本类型层下 1000 个这样的组件的检查成本与 ui 相当。合成组件比 ui 里多数组件重（每个都有 recipe、create、rest 转发、SVG 转发、列表），
+  结构高度一致（类型缓存比真实库更友好），所以只能当量级参考，不能当预测。
+
+4.7 附带发现：10-css/engine/*.ts 做 tsc --strict 检查（只读，未修改）
+  能通过，只有两处：recipe.ts(293) 的对象字面量带 [STABLE] 键，但 PartProps 接口里没有这个键（TS2353，引擎类型的小漏洞）；
+  styles-context.ts(28) 的参数 layer 隐式 any；其余是缺 @hilt/runtime 模块的环境问题。
+  引擎的 RecipeConfig 约束写法（V extends Variants<P>）会让拼错的属性名漏过检查（见 types/css/styles.d.ts 里的说明），
+  响应式档位（size={{ base: 'sm', md: 'lg' }}）与 recipe 扩展参数在我的类型里没有（API.md 建议 v1 不开）。
+
+
+五、没有验证 / 需要注意
+-----------------------
+
+- 合成组件库的结构高度一致，真实库的类型多样性更高；绝对数字请只当量级。
+- 没有量：声明文件生成（--declaration）、增量构建（--incremental / --build）、包含 .d.ts 发布后的消费者场景（组件库以 d.ts 形式被应用引用时的成本）。
+- 编辑器里的真实体验（WebStorm / VS Code 对 TS 7.1 LSP 的补全排序、JSDoc、跳转定义）没验证；LSP 延迟是直接发协议请求的结果。
+- token 的悬停文档：token 登记只有名字，没有值的说明（原 06 用 JSDoc 写在接口成员上，defineTokens 驱动后值只在 defineTokens 的调用处）；没做。
+- 多线程检查器的实例化数含重复计数，不同线程配置之间不能直接比实例化。
+- 机器干扰：同时有 IDE 和别的 tsc 进程在跑；表中 3 轮最小~最大给出了抖动范围（多数 ±5%，个别 ±15%）。
+- 事件模式索引签名为什么能把 16 种排列全展开的成本拉下来（4.3 节观察），没有查清原因；如果以后升级 TS，这条要重测。
+
+
+六、改了 / 新增的文件（全部在 15-types/ 和本文件；没有改 06-types、10-css、09-attr、13-ts、03-publish；10-css/engine 与 vue-tsx-pro 只读）
+-----------------------------------------------------------------------------------------------
+
+15-types/
+  package.json、tsconfig.json、.gitignore
+  types/
+    index.d.ts            框架入口：HtmlProps/SvgProps 等类型再导出、BindableProps、For
+    core.d.ts             JsxElement、Children、Bound/NumberBound/GroupBound、Ref、WriteAs
+    runes.d.ts            符文全局声明（含 _bind、_component）
+    jsx-runtime.d.ts      JSX 命名空间；LibraryManagedAttributes 里的 _bind 映射（BoundProps）
+    elements/             index.d.ts（IntrinsicProps、HtmlProps、SvgProps、自定义元素）、attributes.d.ts、events.d.ts、html.d.ts、svg.d.ts
+    css/                  index.d.ts、registry.d.ts（TokenSets/ConditionSets/ConditionAliases）、conditions.d.ts、token-types.d.ts、
+                          properties.d.ts（csstype 全量）、property-groups.d.ts（生成）、values.d.ts、styles.d.ts（sx/create/recipe）、theme.d.ts
+  cases/                  01-runes、02-components、03-bind、04-attrs、04b-custom-elements、05-events、06-css、07-recipe-theme、
+                          08-generated-attrs（生成）、theme.ts（tokens 与条件别名的定义和登记）
+  scripts/                gen-property-groups.mjs、gen-attr-cases.mjs（从属性规则表生成；规则表现在在 03-publish/packages/runtime/rules.js，原 09-attr/shared.js 已不在）、
+                          check-events.mjs、show-errors.mjs（去掉 @ts-expect-error 看实际报什么错）
+  perf/                   gen.mjs（生成器）、variants.mjs（变体）、run.mjs（tsc 成本）、lsp.mjs（语言服务延迟）、ablate.mjs（消融）、trace.mjs（trace 分析）、
+                          baseline-types/（优化前快照）、step1-types/（第一步优化后快照）、.gitignore（out/ 与 trace 目录不入库，由生成器重建）
+results/15-types.txt（本文件）
+
+附：用例里的关键写法（可直接抄进文档）
+  登记 tokens：export const t = defineTokens('vtp', {...}); declare module '@hilt/css' { interface TokenSets { vtp: typeof t } }
+  登记条件别名：export const conditions = defineConditions({ _loading: '[data-loading]' }); declare module '@hilt/css' { interface ConditionSets { app: typeof conditions } }
+  自定义元素：declare module '@hilt/runtime/elements' { interface CustomElements { 'x-card': { props: {...}; element: XCardElement; events: { 'x-toggle': CustomEvent<boolean> } } } }
+  可绑定 prop：interface Props extends BindableProps<{ value: string }> { … }（value 与 onValueChange 一起生成）

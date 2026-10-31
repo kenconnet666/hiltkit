@@ -1,0 +1,175 @@
+final 2026-10-31 14:34  CPU load at start: 14%
+
+## rows  (14:34:08)
+
+== 耗时 ms（中位数，7 轮，含强制布局） ==
+ | hilt-plain | hilt-plain-deep | hilt-runes | vue36-vapor | vue35-vdom
+create 1000 | 58.8 | 60.6 | 53.1 | 47.9 | 51.1
+replace 1000 | 65.3 | 66.4 | 58.2 | 51.9 | 54.5
+update every 10th | 14.7 | 15.7 | 14.3 | 14 | 16.6
+select row | 0.8 | 1.3 | 0.1 | 0.1 | 1.4
+swap rows | 4.4 | 4.8 | 5.2 | 4.4 | 5.9
+remove row | 4.7 | 4.9 | 5.5 | 4.4 | 5.8
+clear | 8 | 7.7 | 6.3 | 6.3 | 7.5
+create 10000 | 722.2 | 642.4 | 693.3 | 604.8 | 521.7
+
+== 其中脚本耗时 ms（不含强制布局） ==
+ | hilt-plain | hilt-plain-deep | hilt-runes | vue36-vapor | vue35-vdom
+create 1000 | 19.1 | 22.6 | 15.8 | 10.8 | 13.4
+replace 1000 | 26.1 | 27.2 | 23.1 | 15.8 | 18.3
+update every 10th | 0.7 | 0.9 | 0.9 | 0.7 | 3
+select row | 0.8 | 1.2 | 0.1 | 0 | 1.4
+swap rows | 0.7 | 0.9 | 1 | 0.3 | 2.1
+remove row | 0.7 | 0.9 | 1.4 | 0.5 | 2
+clear | 7.9 | 7.5 | 6.2 | 6.2 | 7.3
+create 10000 | 207.5 | 242.9 | 154.5 | 102.8 | 129.6
+
+== 体积与内存 ==
+ | hilt-plain | hilt-plain-deep | hilt-runes | vue36-vapor | vue35-vdom
+bundle minified bytes | 36276 | 36173 | 24504 | 75853 | 58331
+bundle gzip bytes | 14165 | 14125 | 9521 | 28800 | 23267
+JS heap after create 10000 (KB, 净增) | 10873 | 12779 | 14891 | 10306 | 15675
+
+== DOM 结果校验 ==
+hilt-plain: OK
+  首行: <tr><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>
+hilt-plain-deep: OK
+  首行: <tr><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>
+hilt-runes: OK
+  首行: <tr><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>
+vue36-vapor: OK
+  首行: <tr class=""><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>
+vue35-vdom: OK
+  首行: <tr class=""><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>
+exit=0
+
+## vue-compare  (14:35:24)
+## 产物（同一组组件）
+
+| 版本 | minify KB | gzip KB |
+| --- | --- | --- |
+| Vue 3.5 虚拟 DOM | 62.5 | 25.0 |
+| Vue 3.6 Vapor | 91.7 | 34.3 |
+| hilt 标准 JSX | 33.7 | 13.0 |
+
+## 一万个 v-model 开关
+
+| 版本 | 创建 ms | 每个 KB | 全部切换 ms |
+| --- | --- | --- | --- |
+| Vue 3.5 虚拟 DOM | 561.2 | 4.89 | 1263.3 |
+| Vue 3.6 Vapor | 671.2 | 4.01 | 377.1 |
+| hilt 标准 JSX | 260.6 | 0.78 | 56.7 |
+
+## 三层按钮一万个（属性透传、class 合并、事件）
+
+| 版本 | 创建 ms | 每个 KB | 改 title（全部更新） ms |
+| --- | --- | --- | --- |
+| Vue 3.5 虚拟 DOM | 703.6 | 5.90 | 271.9 |
+| Vue 3.6 Vapor | 1417.3 | 6.31 | 795.2 |
+| hilt 标准 JSX | 387.3 | 0.36 | 26.6 |
+
+## 服务端渲染和接管（1 万行）
+
+| 版本 | 服务端 ms | HTML KB | gzip KB | 接管 ms | 接管后 DOM 改动 | 纯客户端 ms |
+| --- | --- | --- | --- | --- | --- | --- |
+| Vue 3.5 虚拟 DOM | 2.9 | 847 | 54 | 110.3 | 0 | 147.9 |
+| hilt 标准 JSX | 46.0 | 760 | 52 | 88.3 | 0 | 186.9 |
+
+## 单个组件文件的转换（中位数，ms/文件）
+
+Vue 3.5 SFC 编译：1.05
+Vue 3.6 Vapor 编译：1.14
+hilt 标准 JSX（esbuild）：1.54
+exit=0
+
+## bench  (14:37:18)
+编译器模板：33.3 KB，gzip 13.0 KB；标准 JSX：36.2 KB，gzip 14.0 KB
+
+### 一万个可绑定开关
+
+| 操作 | 编译器模板 | 标准 JSX | 倍数 |
+| --- | --- | --- | --- |
+| 创建 | 258.10 | 112.10 | 0.43 |
+| 创建 每个 KB | 1.28 | 0.78 | 0.61 |
+| 全部切换 | 21.60 | 21.20 | 0.98 |
+
+### 三层按钮一万个（class 合并、响应式 title、事件）
+
+| 操作 | 编译器模板 | 标准 JSX | 倍数 |
+| --- | --- | --- | --- |
+| 创建 | 235.80 | 136.60 | 0.58 |
+| 创建 每个 KB | 1.47 | 0.36 | 0.25 |
+| 改 title（全部更新） | 14.60 | 10.40 | 0.71 |
+
+### 行列表
+
+| 操作 | 编译器模板 | 标准 JSX | 倍数 |
+| --- | --- | --- | --- |
+| 挂载 | 2.10 | 2.50 | 1.19 |
+| 建 1000 行 | 17.60 | 26.60 | 1.51 |
+| 每 10 行改文字 | 0.80 | 1.40 | 1.75 |
+| 交换两行 | 1.30 | 2.50 | 1.92 |
+| 清空 | 4.20 | 5.30 | 1.26 |
+| 建 10000 行 | 87.00 | 133.40 | 1.53 |
+| 每 10 行改文字（一万行） | 3.90 | 6.70 | 1.72 |
+
+### 单个文件的转换（18-plain/cases/app.tsx，50 轮中位数）
+
+esbuild 转 JSX：3.77 ms
+Babel 编译器（只转 JSX 和列表）：29.06 ms
+exit=0
+
+## dev  (14:38:10)
+
+| 300 个组件 | 值 |
+| --- | --- |
+| 开发服务器就绪 | 162 ms |
+| 首次打开 | 2623 ms，338 个请求，错误 0 |
+| 同会话再开 | 807 ms |
+| 改组件到生效 | 94 ms；没有整页刷新 true；上层状态保留 true |
+| 改样式到生效 | 95 ms |
+| 改页面到生效 | 66 ms；没有整页刷新 true；实例数正确 true；页面状态重置为 false |
+
+| 1000 个组件 | 值 |
+| --- | --- |
+| 开发服务器就绪 | 44 ms |
+| 首次打开 | 6801 ms，1038 个请求，错误 0 |
+| 同会话再开 | 1787 ms |
+| 改组件到生效 | 194 ms；没有整页刷新 true；上层状态保留 true |
+| 改样式到生效 | 196 ms |
+| 改页面到生效 | 87 ms；没有整页刷新 true；实例数正确 true；页面状态重置为 false |
+exit=0
+
+## deep-default  (14:38:35)
+## 语义
+ok   改嵌套字段：只有读它的 effect 重跑
+ok   整体替换：新对象也是深代理，依赖它的都重跑
+ok   替换后的对象改字段也响应
+ok   初始是 null，之后给对象：按值判断，所以也是深代理
+ok   之后改字段响应
+ok   数组原地 push 响应
+ok   同一行多次读身份稳定
+ok   原始值没有代理成本：读出来就是值
+ok   Date、类实例不代理
+ok   类实例不代理
+
+## 已知的坑
+  box() === original：false（代理和原对象不相等）
+  raw(box()) === original：true
+  structuredClone(box())：DataCloneError；structuredClone(snapshot(box()))：object
+  JSON.stringify(box())：{"a":1}
+  { ...box() }：取出的是普通对象 true
+  const { a } = box()：a 是值 1，之后不再跟随
+
+## 成本（1 万个对象，每个 2 个字段，每个对象一个 effect 读 1 个字段）
+
+| 方式 | 创建 ms | 每个 KB | 全部写一个字段 ms | 只读 100 万次 ms |
+| --- | --- | --- | --- | --- |
+| 每个字段一个 sig | 10.9 | 0.90 | 6.5 | 38.9 |
+| 不代理，整体替换（sig.raw） | 6.2 | 0.65 | 5.0 | 31.0 |
+| sig 默认深代理 | 20.5 | 1.05 | 12.5 | 127.4 |
+
+语义全部通过
+exit=0
+
+done 14:38:41

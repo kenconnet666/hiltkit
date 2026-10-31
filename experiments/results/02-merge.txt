@@ -1,0 +1,23 @@
+== 语义 ==
+检查 | eager-whole | proxy-all | proxy-static | define-static | hoisted | solid
+class 按层拼接 | ok | ok | ok | ok | ok | ok
+上层 undefined 不盖掉下层，恢复后再次生效 | ok | ok | ok | ok | ok | ok
+事件：上层先执行，preventDefault 跳过下层 | ok | ok | ok | ok | ok | ok
+事件：使用方写 undefined 不盖掉内部的 | ok | ok | ok | ok | ok | ok
+受管层盖过使用方 | ok | ok | ok | ok | ok | ok
+被盖住的 getter 不求值（惰性） | ok | ok | ok | ok | ok | ok
+改一个键不重算其他键 | fail: {"reEvaluated":1} | ok | ok | ok | ok | fail: {"reEvaluated":1}
+动态键：出现、消失后恢复下层 | ok | ok | ok | ok | ok | ok
+style 按属性合并 | ok | ok | ok | ok | ok | fail: "top: 2px;"
+ref 每层都拿到元素 | ok | ok | ok | ok | ok | fail: 1
+
+== 性能：10000 个三层按钮 ==
+指标 | direct | eager-whole | proxy-all | proxy-static | define-static | hoisted | solid
+mount ms | 60.8 | 240.1 | 301.6 | 314.3 | 583.7 | 321.7 | 828.2
+update 1 button x1000 ms | 1.9 | 9 | 3.7 | 3.6 | 4.4 | 4.1 | 13.8
+update all (shared signal) ms | 12.4 | 57.3 | 21.5 | 19.9 | 30.9 | 22.4 | 94.7
+dispose ms | 5 | 4.5 | 14.6 | 8.2 | 10.2 | 9.8 | 4.5
+DOM writes / update | 0 | 1 | 1 | 1 | 1 | 1 | 0
+unrelated getter re-evals / update | 0 | 1 | 0 | 0 | 0 | 0 | 1
+heap KB / button | 0.42 | 1.78 | 3.61 | 2.13 | 2.13 | 2.13 | 6.3
+attrs on element | 10 | 11 | 11 | 11 | 11 | 11 | 11

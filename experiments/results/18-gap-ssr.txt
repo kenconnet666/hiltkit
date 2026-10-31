@@ -1,0 +1,58 @@
+## 1 万行列表（node v24.18.0，15 轮）
+
+| 版本 | 中位 ms | 最小 ms | 最大 ms | 每行 µs | HTML KB |
+| --- | --- | --- | --- | --- | --- |
+| 手写字符串 | 2.6 | 2.2 | 4.1 | 0.26 | 760 |
+| Vue 编译模板 | 3.1 | 2.4 | 5.2 | 0.31 | 847 |
+| Vue h() | 63.5 | 31.2 | 88.1 | 6.35 | 847 |
+| hilt | 38.2 | 28.8 | 72.3 | 3.82 | 760 |
+| hilt 只建 VNode | 4.3 | 2.1 | 31.3 | 0.43 | 0 |
+
+## 1 万个三层按钮组件
+
+| 版本 | 中位 ms | 最小 ms | 最大 ms | 每行 µs | HTML KB |
+| --- | --- | --- | --- | --- | --- |
+| Vue 编译模板 | 263.2 | 247.0 | 312.0 | 26.32 | 1102 |
+| Vue h() | 217.3 | 185.9 | 261.3 | 21.73 | 790 |
+| hilt | 76.9 | 64.6 | 106.4 | 7.69 | 790 |
+
+## hilt 列表 CPU 自身耗时（30 次）
+
+ 32.4%  elementHtml:1801
+ 21.1%  toHtml:1817
+ 18.0%  escapeText:1666
+ 15.8%  (garbage collector)
+  5.9%  escapeAttr:1667
+  2.7%  (anonymous):2402
+  2.4%  ssrAttr:1671
+  0.8%  (anonymous):2398
+  0.3%  children:2441
+  0.2%  class:2441
+  0.1%  (program)
+  0.1%  scope:546
+  0.1%  App:2436
+  0.1%  dispatch
+  0.0%  make:1973
+  0.0%  renderToString:1842
+  0.0%  settle2:2070
+
+## hilt 按钮 CPU 自身耗时（30 次）
+
+ 23.9%  escapeAttr:1667
+ 20.2%  merge2:1991
+  9.2%  (garbage collector)
+  9.2%  elementHtml:1801
+  7.9%  Mid:2450
+  6.3%  Base:2447
+  5.8%  runSetup:565
+  4.2%  escapeText:1666
+  4.0%  toHtml:1817
+  3.8%  ssrAttr:1671
+  1.7%  settle2:2070
+  1.6%  ButtonRow:2455
+  1.2%  Buttons:2458
+  0.4%  (anonymous):1836
+  0.4%  classString:817
+  0.2%  (program)
+  0.0%  dispatch
+  0.0%  provideValue:630

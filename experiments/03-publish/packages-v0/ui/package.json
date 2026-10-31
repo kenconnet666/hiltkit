@@ -1,0 +1,11 @@
+{
+  "name": "@hilt/ui",
+  "version": "0.1.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": { "node": "./dist/server.js", "default": "./dist/index.js" },
+  "files": ["dist"],
+  "peerDependencies": {
+    "@hilt/runtime": "*"
+  }
+}

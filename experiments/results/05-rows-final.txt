@@ -1,0 +1,34 @@
+
+== 耗时 ms（中位数，7 轮，含强制布局） ==
+ | hilt-prototype | solid
+create 1000 | 48.9 | 47.9
+replace 1000 | 54.5 | 54.5
+update every 10th | 14.4 | 14.8
+select row | 0.1 | 0.4
+swap rows | 4.6 | 4.6
+remove row | 4.7 | 4.5
+clear | 6.6 | 6
+create 10000 | 632.8 | 602.4
+
+== 其中脚本耗时 ms（不含强制布局） ==
+ | hilt-prototype | solid
+create 1000 | 10.5 | 9.9
+replace 1000 | 16.8 | 15.4
+update every 10th | 0.6 | 0.9
+select row | 0 | 0.3
+swap rows | 0.7 | 0.7
+remove row | 0.9 | 0.5
+clear | 6.4 | 5.8
+create 10000 | 115.1 | 98.3
+
+== 体积与内存 ==
+ | hilt-prototype | solid
+bundle minified bytes | 10718 | 15498
+bundle gzip bytes | 4441 | 6373
+JS heap after create 10000 (KB, 净增) | 14101 | 13053
+
+== DOM 结果校验 ==
+hilt-prototype: OK
+  首行: <tr class=""><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>
+solid: OK
+  首行: <tr class=""><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>

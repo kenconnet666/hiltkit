@@ -1,0 +1,20 @@
+regress 2026-10-31 20:09
+ok   types 18-plain  exit=0  1s  
+ok   types port  exit=0  1s  
+ok   run chromium  exit=0  6s  通过 99，失败 0
+ok   verify chromium  exit=0  8s  通过 71，失败 0
+ok   lib chromium  exit=0  6s  ok   使用方类型：正例通过、负例全部命中（TS 7.1 beta） / 通过 23，失败 0
+ok   port chromium  exit=0  5s  通过 58，失败 0
+ok   run firefox  exit=0  9s  通过 99，失败 0
+ok   verify firefox  exit=0  15s  通过 71，失败 0
+ok   lib firefox  exit=0  9s  ok   使用方类型：正例通过、负例全部命中（TS 7.1 beta） / 通过 23，失败 0
+ok   port firefox  exit=0  9s  通过 58，失败 0
+ok   run webkit  exit=0  8s  通过 99，失败 0
+ok   verify webkit  exit=0  10s  通过 71，失败 0
+ok   lib webkit  exit=0  6s  ok   使用方类型：正例通过、负例全部命中（TS 7.1 beta） / 通过 23，失败 0
+ok   port webkit  exit=0  6s  通过 58，失败 0
+ok   fuzz  exit=0  14s  ok   水合：200/200 通过 / 汇总：
+ok   fuzz mixed  exit=0  1s  ok   内核图：400/400 通过 / 汇总：
+ok   leak  exit=0  18s  全部通过
+ok   devtools  exit=0  12s  通过 77，失败 0
+ok   runes run-all  exit=0  249s  ok   集成：58 条通过 / 合计 1197 条通过，0 条失败

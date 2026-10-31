@@ -1,0 +1,68 @@
+  [逐步累加 a] v0 原型写法: mount 309.5 ms, heap 2.48 KB
+  [逐步累加 a] +1 release: mount 281.4 ms, heap 2.34 KB
+  [逐步累加 a] +1b noDisposer: mount 280.3 ms, heap 2.33 KB
+  [逐步累加 a] +2 noScope: mount 280 ms, heap 1.76 KB
+  [逐步累加 a] +X1 ownerArray: mount 259.6 ms, heap 1.65 KB
+  [逐步累加 a] +3 hoistSet: mount 281.6 ms, heap 1.42 KB
+  [逐步累加 a] +4 light: mount 255.2 ms, heap 1.42 KB
+  [逐步累加 a] +5 flat: mount 234.4 ms, heap 1.35 KB
+  [逐步累加 a] +6 delegate: mount 245.3 ms, heap 1.32 KB
+  [逐步累加 a] +7a lean: mount 190.5 ms, heap 1.32 KB
+  [逐步累加 a] +7b hoist: mount 188.7 ms, heap 1.3 KB
+  [逐步累加 a] +X2 bindingNode: mount 194 ms, heap 1.17 KB
+  [逐步累加 a] +8 shape: mount 144.3 ms, heap 0.62 KB
+
+== 逐步累加（场景 a：10000 个实例；轮数 3；有负载，仅看比例） ==
+指标 | v0 原型写法 | +1 release | +1b noDisposer | +2 noScope | +X1 ownerArray | +3 hoistSet | +4 light | +5 flat | +6 delegate | +7a lean | +7b hoist | +X2 bindingNode | +8 shape | 手写基线
+mount ms | 309.5 | 281.4 | 280.3 | 280 | 259.6 | 281.6 | 255.2 | 234.4 | 245.3 | 190.5 | 188.7 | 194 | 144.3 | 67.5
+update 1 x1000 ms | 5.3 | 5.1 | 5.2 | 5.1 | 5 | 4.9 | 5.3 | 5 | 4.9 | 5.4 | 5 | 4.5 | 3.9 | 6.4
+update all ms | 21.3 | 21 | 22 | 18.5 | 17.2 | 19.2 | 18.8 | 17.7 | 18.1 | 17.7 | 17.2 | 16 | 15.8 | 14.7
+click x1000 ms | 1 | 1 | 1 | 0.9 | 0.8 | 1 | 0.7 | 1 | 1 | 0.9 | 0.8 | 0.8 | 0.7 | 1.2
+dispose ms | 12.6 | 7.5 | 11 | 6 | 4.5 | 7 | 4 | 4.4 | 4.3 | 4 | 4.4 | 4.6 | 5.3 | 5.1
+heap KB / 实例 | 2.48 | 2.34 | 2.33 | 1.76 | 1.65 | 1.42 | 1.42 | 1.35 | 1.32 | 1.32 | 1.3 | 1.17 | 0.62 | 0.41
+effects | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 2
+effects released | 0 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 0
+effects live | 4 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 2
+scopes | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+proxies | 4 | 4 | 4 | 4 | 4 | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Set 分配 | 4 | 4 | 4 | 4 | 4 | 1 | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0
+层对象/数组 | 11 | 11 | 11 | 11 | 11 | 11 | 15 | 8 | 8 | 8 | 8 | 8 | 8 | 0
+listeners | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0
+setAttr | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 8 | 8 | 8 | 0
+闭包(估) | 19 | 18 | 15 | 11 | 11 | 11 | 11 | 11 | 10 | 9 | 9 | 5 | 0 | 2
+elements | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1
+attrs | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10
+  [逐步累加 b] v0 原型写法: mount 334.8 ms, heap 3.82 KB
+  [逐步累加 b] +1 release: mount 315.7 ms, heap 3.3 KB
+  [逐步累加 b] +1b noDisposer: mount 307.7 ms, heap 3.29 KB
+  [逐步累加 b] +2 noScope: mount 297.6 ms, heap 2.13 KB
+  [逐步累加 b] +X1 ownerArray: mount 304.6 ms, heap 1.99 KB
+  [逐步累加 b] +3 hoistSet: mount 293 ms, heap 1.76 KB
+  [逐步累加 b] +4 light: mount 303.9 ms, heap 1.76 KB
+  [逐步累加 b] +5 flat: mount 265.4 ms, heap 1.7 KB
+  [逐步累加 b] +6 delegate: mount 270.9 ms, heap 1.66 KB
+  [逐步累加 b] +7a lean: mount 257 ms, heap 1.68 KB
+  [逐步累加 b] +7b hoist: mount 238.8 ms, heap 1.65 KB
+  [逐步累加 b] +X2 bindingNode: mount 245.7 ms, heap 1.53 KB
+  [逐步累加 b] +8 shape: mount 208.3 ms, heap 1.03 KB
+
+== 逐步累加（场景 b：5000 个实例；轮数 3；有负载，仅看比例） ==
+指标 | v0 原型写法 | +1 release | +1b noDisposer | +2 noScope | +X1 ownerArray | +3 hoistSet | +4 light | +5 flat | +6 delegate | +7a lean | +7b hoist | +X2 bindingNode | +8 shape | 手写基线
+mount ms | 334.8 | 315.7 | 307.7 | 297.6 | 304.6 | 293 | 303.9 | 265.4 | 270.9 | 257 | 238.8 | 245.7 | 208.3 | 128.8
+update 1 x1000 ms | 8.7 | 9.1 | 9.7 | 8.2 | 9.9 | 11.2 | 8.8 | 8.3 | 8.8 | 8.3 | 7.6 | 8.4 | 7.6 | 6.8
+update all ms | 9.3 | 8.8 | 9.8 | 8 | 9.5 | 8 | 10.2 | 8 | 8.3 | 9.1 | 8.5 | 7.8 | 7.4 | 6.4
+click x1000 ms | 5.5 | 5.1 | 5.6 | 5.1 | 6.1 | 5.9 | 6.2 | 8.9 | 7.9 | 7.8 | 7 | 7.6 | 7.5 | 4.4
+dispose ms | 10.8 | 10.3 | 9.9 | 8.2 | 7.2 | 7.6 | 7.7 | 6.7 | 6.8 | 6.9 | 6.5 | 7.7 | 9 | 7.7
+heap KB / 实例 | 3.82 | 3.3 | 3.29 | 2.13 | 1.99 | 1.76 | 1.76 | 1.7 | 1.66 | 1.68 | 1.65 | 1.53 | 1.03 | 0.96
+effects | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 4
+effects released | 0 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 0
+effects live | 7 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4
+scopes | 4 | 4 | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+proxies | 6 | 6 | 6 | 6 | 6 | 6 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Set 分配 | 6 | 6 | 6 | 6 | 6 | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 0
+层对象/数组 | 15 | 15 | 15 | 15 | 15 | 15 | 21 | 12 | 12 | 12 | 12 | 12 | 12 | 0
+listeners | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0
+setAttr | 9 | 9 | 9 | 9 | 9 | 9 | 9 | 9 | 9 | 9 | 6 | 6 | 6 | 0
+闭包(估) | 30 | 27 | 24 | 16 | 16 | 16 | 16 | 16 | 15 | 13 | 13 | 9 | 3 | 4
+elements | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4
+attrs | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1

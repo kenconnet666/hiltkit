@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.vite/
+
+# 每次运行的输出和崩溃转储
+last-run.*
+*.stackdump

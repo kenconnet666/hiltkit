@@ -1,0 +1,40 @@
+
+== 耗时 ms（中位数，7 轮，含强制布局） ==
+ | hilt-prototype | solid | svelte5 | vue36-vapor | vue35-vdom
+create 1000 | 56.7 | 53.5 | 49.1 | 48.7 | 58.8
+replace 1000 | 62.5 | 57.7 | 59 | 55.8 | 65.1
+update every 10th | 15.9 | 15.6 | 14 | 15.8 | 19.1
+select row | 0.1 | 0.4 | 1.1 | 0.1 | 1.6
+swap rows | 4.9 | 4.7 | 6.2 | 4.3 | 6.3
+remove row | 4.7 | 4.5 | 6.3 | 4.5 | 6.2
+clear | 6.5 | 6.3 | 7.1 | 6.8 | 8.4
+create 10000 | 634.1 | 614.8 | 612.3 | 638 | 579.5
+
+== 其中脚本耗时 ms（不含强制布局） ==
+ | hilt-prototype | solid | svelte5 | vue36-vapor | vue35-vdom
+create 1000 | 12 | 11.2 | 12.6 | 10.8 | 14.2
+replace 1000 | 19 | 15.5 | 22.3 | 16.3 | 21.7
+update every 10th | 0.6 | 0.8 | 0.6 | 0.7 | 3.2
+select row | 0.1 | 0.3 | 1 | 0.1 | 1.5
+swap rows | 0.7 | 0.7 | 2.5 | 0.4 | 2.2
+remove row | 0.6 | 0.5 | 2.7 | 0.4 | 2.1
+clear | 6.4 | 6.2 | 6.9 | 6.6 | 8.2
+create 10000 | 124.5 | 100.2 | 132.6 | 118.7 | 139.3
+
+== 体积与内存 ==
+ | hilt-prototype | solid | svelte5 | vue36-vapor | vue35-vdom
+bundle minified bytes | 9085 | 15498 | 55145 | 75853 | 58331
+bundle gzip bytes | 3808 | 6373 | 20619 | 28800 | 23267
+JS heap after create 10000 (KB, 净增) | 12831 | 13053 | 14551 | 10305 | 15675
+
+== DOM 结果校验 ==
+hilt-prototype: OK
+  首行: <tr class=""><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>
+solid: OK
+  首行: <tr class=""><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>
+svelte5: OK
+  首行: <tr><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>
+vue36-vapor: OK
+  首行: <tr class=""><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>
+vue35-vdom: OK
+  首行: <tr class=""><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>

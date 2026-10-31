@@ -1,0 +1,75 @@
+## 语义断言（真实 Chromium）
+
+ok   合并：后者覆盖前者，没写的属性保留
+ok   合并：顺序反过来则前者赢
+ok   合并：一个元素只有一个生成类
+ok   合并：假值与嵌套数组被忽略，同样的组合返回同一个对象
+ok   条件逐项合并：只写 default，原来的 :hover 保留
+ok   条件逐项合并：条件里的 null 表示不改（不清掉前面的 :hover）
+ok   普通值整体替换，连前面的条件一起去掉
+ok   顶层 null 去掉该属性，其他属性保留
+ok   token 短写换成变量；数字补 px
+ok   条件别名 _selected 跟着 aria 属性走：改属性变色，类名不变
+ok   @media 条件生效（视口 1200 宽）
+ok   create 不插规则，attrs 第一次用到才插；第二次不再插
+ok   动态样式：稳定后值怎么变都只改 style 变量，不换类、不插规则
+ok   动态样式：第一次变时就地换一次类（写死 → 变量），之后不再换
+ok   动态样式：按参数记忆求值结果（回到见过的值不再调用工厂函数）
+ok   select：有限状态就地换类（新组合第一次出现插一条规则，再出现不插），使用方的类不动，style 不动
+ok   select：返回假值时去掉这一段，只剩基础类
+ok   换主题只换根元素的类，子元素一个改动都没有，颜色随变量变
+ok   effectScope 停掉后，改状态不再动 DOM
+ok   mountReactive：不用 bind / select，状态变化后的样式同样正确，稳定后只改变量
+ok   基准的三种写法（engine / engine-effect / hand）走同一串操作，计算样式逐元素一致
+ok   真实悬停：default 被后者覆盖为绿，:hover 的蓝因条件里的 null 保留
+
+22/22 通过
+
+## 1000 行样式更新（9 轮中位数，每次改状态后强制布局）
+
+| 场景（次数） | 引擎 bind/select（signals） ms | 引擎 整段 effect（signals） ms | 手写类 + 元素变量（signals） ms |
+| --- | --- | --- | --- |
+| widths ×20 | 305.4 | 344.2 | 295.9 |
+| oneWidth ×20 | 11.6 | 11 | 10.9 |
+| hot ×10 | 185.4 | 205 | 190.9 |
+| unrelated ×10 | 0 | 0 | 0 |
+| theme ×4 | 61 | 66.4 | 62.5 |
+| 挂载（首次渲染） | 77.4 | 83.5 | 61 |
+| 卸载（停全部 effect） | 1.3 | 1.5 | 1.3 |
+
+每次状态变化平均改了几处 DOM（按属性名）/ CSSOM：
+
+| 场景 | 引擎 bind/select（signals） | 引擎 整段 effect（signals） | 手写类 + 元素变量（signals） |
+| --- | --- | --- | --- |
+| widths | DOM style×1000；CSSOM 无 | DOM style×1000；CSSOM 无 | DOM style×1000；CSSOM 无 |
+| oneWidth | DOM style×1；CSSOM 无 | DOM style×1；CSSOM 无 | DOM style×1；CSSOM 无 |
+| hot | DOM class×1000；CSSOM 无 | DOM class×1000；CSSOM 无 | DOM class×1000；CSSOM 无 |
+| unrelated | DOM 无；CSSOM 无 | DOM 无；CSSOM 无 | DOM 无；CSSOM 无 |
+| theme | DOM class×1；CSSOM 无 | DOM class×1；CSSOM 无 | DOM class×1；CSSOM 无 |
+
+## 组件库规模：300 个样式组首次渲染全部用到（9 轮，每轮新页面）
+
+| 路径 | JS 总耗时 ms | 挂元素 + 强制样式重算 ms | 规则数 |
+| --- | --- | --- | --- |
+| 运行时引擎（展开 + 组合 + 哈希 + 插规则） | 56.8 | 6.5 | 1504 |
+| 构建期预计算（查表 + insertRule） | 8.5 | 6.1 | 1500 |
+
+运行时 / 预计算 = 6.68×；运行时多出 48.3 ms（161 µs / 组）
+
+引擎路径按阶段拆开（另一页面单独跑，约等于总耗时）：展开声明 14.3 ms，组合 + 序列化 + 哈希 18.5 ms，插规则 10.4 ms
+预计算表的体积：162793 字节 JSON（gzip 14564），平均每组 543 字节、5 条规则
+
+## 引擎体积（esbuild minify + gzip -9 / brotli -11，字节）
+
+| 内容 | minify | gzip | brotli |
+| --- | --- | --- | --- |
+| 引擎（runtime.ts 全部导出），含 alien-signals | 23006 | 9148 | 8289 |
+| 引擎，alien-signals 外置（只算引擎自己） | 19769 | 7902 | 7116 |
+|   去掉 token 对照表 | 18255 | 7386 | 6631 |
+|   去掉优先级表 | 16161 | 6684 | 6077 |
+|   去掉两张表 | 14648 | 6157 | 5587 |
+|   去掉 inline（小程序行内样式）与 hot（热更新） | 18328 | 7406 | 6653 |
+|   去掉两张表 + inline + hot（最小核心） | 13205 | 5654 | 5119 |
+| 引擎 + recipe，alien-signals 外置 | 21589 | 8573 | 7736 |
+| 只有 alien-signals（effect + signal + 作用域，tree-shake 后） | 4389 | 1680 | 1570 |
+

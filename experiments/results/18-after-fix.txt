@@ -1,0 +1,55 @@
+after-fix 2026-10-31 19:57  CPU load at start: 20%
+
+## 18-plain/vue-compare/gap-ssr.mjs --rounds=15
+## 1 万行列表（node v24.18.0，15 轮）
+
+| 版本 | 中位 ms | 最小 ms | 最大 ms | 每行 µs | HTML KB |
+| --- | --- | --- | --- | --- | --- |
+| 手写字符串 | 2.6 | 2.0 | 35.1 | 0.26 | 760 |
+| Vue 编译模板 | 2.8 | 2.2 | 29.6 | 0.28 | 847 |
+| Vue h() | 39.8 | 28.9 | 84.3 | 3.98 | 847 |
+| hilt | 25.7 | 18.6 | 62.4 | 2.57 | 760 |
+| hilt 只建 VNode | 4.1 | 1.9 | 5.9 | 0.41 | 0 |
+
+## 1 万个三层按钮组件
+
+| 版本 | 中位 ms | 最小 ms | 最大 ms | 每行 µs | HTML KB |
+| --- | --- | --- | --- | --- | --- |
+| Vue 编译模板 | 269.3 | 198.8 | 311.0 | 26.93 | 1102 |
+| Vue h() | 231.9 | 189.1 | 281.8 | 23.19 | 790 |
+| hilt | 66.5 | 35.1 | 83.9 | 6.65 | 790 |
+exit=0
+
+## 18-plain/vue-compare/gap-rows.mjs --rounds=11
+## 创建 1 万行（Chromium，每轮新页面，交替，11 轮）
+
+| 版本 | 脚本中位 ms | 脚本最小 | 脚本最大 | 含布局中位 ms | 含布局最小 | 含布局最大 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 手写 createElement | 59 | 53 | 71 | 575 | 522 | 646 |
+| 手写 cloneNode | 65 | 61 | 92 | 517 | 492 | 669 |
+| Vapor | 98 | 92 | 113 | 569 | 547 | 628 |
+| Vue 3.5 | 124 | 104 | 139 | 645 | 581 | 680 |
+| hilt | 141 | 134 | 174 | 620 | 594 | 691 |
+| hilt +委托 | 128 | 119 | 154 | 590 | 569 | 640 |
+
+## 每行的 DOM 调用次数（建 1000 行）
+
+- 手写 createElement：共 18.0；createElement 6.0，appendChild 6.0，textContent= 3.0，addEventListener 2.0，className= 1.0
+- 手写 cloneNode：共 6.0；data= 2.0，addEventListener 2.0，cloneNode 1.0，appendChild 1.0
+- Vapor：共 7.0；addEventListener 2.0，nodeValue= 2.0，cloneNode 1.0，className= 1.0，insertBefore 1.0
+- Vue 3.5：共 19.0；createElement 6.0，insertBefore 6.0，textContent= 3.0，addEventListener 2.0，className= 2.0
+- hilt：共 19.0；insertBefore 7.0，createElement 6.0，textContent= 2.0，addEventListener 2.0，createTextNode 1.0，setAttribute 1.0
+- hilt +委托：共 17.0；insertBefore 7.0，createElement 6.0，textContent= 2.0，createTextNode 1.0，setAttribute 1.0，addEventListener 0.0
+exit=0
+
+## 18-plain/devtools/cost.mjs --rounds=9
+## 调试钩子开销（Chromium，9 轮中位数，脚本耗时）
+
+| 版本 | 建 1 万行 ms | 每 10 行更新 ms | 100 万次写入 ms | 建 1 万行堆 KB | gzip KB |
+| --- | --- | --- | --- | --- | --- |
+| 无钩子 | 168 | 5.9 | 10.9 | 10567 | 13.89 |
+| 钩子未装 | 172 | 6.1 | 13.5 | 10588 | 14.08 |
+| 已装 | 278 | 6.9 | 13.6 | 20986 | 20.48 |
+| 录制中 | 400 | 35.9 | 20.2 | 19076 | 20.50 |
+exit=0
+done 20:00:47

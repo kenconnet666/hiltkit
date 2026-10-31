@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "jsxImportSource": "hilt",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true,
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": [],
+    "paths": {
+      "csstype": ["../../13-ts/node_modules/csstype/index.d.ts"],
+      "hilt": ["../hilt/index.ts"],
+      "hilt/jsx-runtime": ["../hilt/jsx-runtime.ts"],
+      "hilt/css": ["../hilt/css.ts"]
+    }
+  },
+  "include": ["../kernel.d.ts", "../hilt/**/*.ts", "./*.ts", "./*.tsx"]
+}

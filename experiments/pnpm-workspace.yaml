@@ -1,0 +1,22 @@
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@babel/core@8.0.10'
+  - '@babel/generator@8.0.10'
+  - '@babel/helpers@8.0.10'
+  - '@babel/parser@8.0.10'
+  - '@babel/traverse@8.0.10'
+  - '@babel/types@8.0.10'
+  - '@vue/compiler-core@3.6.0-rc.14'
+  - '@vue/compiler-dom@3.6.0-rc.14'
+  - '@vue/compiler-sfc@3.6.0-rc.14'
+  - '@vue/compiler-ssr@3.6.0-rc.14'
+  - '@vue/compiler-vapor@3.6.0-rc.14'
+  - '@vue/reactivity@3.6.0-rc.14'
+  - '@vue/runtime-core@3.6.0-rc.14'
+  - '@vue/runtime-dom@3.6.0-rc.14'
+  - '@vue/runtime-vapor@3.6.0-rc.14'
+  - '@vue/server-renderer@3.6.0-rc.14'
+  - '@vue/shared@3.6.0-rc.14'
+  - solid-js@1.9.18
+  - vue@3.6.0-rc.14

@@ -1,0 +1,16 @@
+{
+  "name": "exp-15-types",
+  "private": true,
+  "type": "module",
+  "description": "细粒度框架的类型层选型实验：符文、JSX 元素属性、CSS（sx / create / recipe / tokens）与类型检查、语言服务成本",
+  "scripts": {
+    "check": "node ../13-ts/node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
+    "gen": "node scripts/gen-property-groups.mjs && node scripts/gen-attr-cases.mjs",
+    "check:sync": "node scripts/gen-property-groups.mjs --check && node scripts/check-events.mjs",
+    "errors": "node scripts/show-errors.mjs",
+    "perf:gen": "node perf/gen.mjs 300 && node perf/gen.mjs 1000",
+    "perf:run": "node perf/run.mjs --n=300,1000",
+    "perf:lsp": "node perf/lsp.mjs --n=300,1000",
+    "perf:ablate": "node perf/ablate.mjs 100"
+  }
+}

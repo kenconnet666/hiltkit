@@ -1,0 +1,53 @@
+
+== 开销（每轮新页面？否：同页面热身一次后取 9 轮中位数；别的进程在跑时只看量级）==
+
+chromium
+  setAttr：10k 元素 × 10 属性
+    直接 setAttribute（下限，语义不对：hidden=false 会写成 "false"）: 31.2 ms
+    手写对的语义（className、布尔分支）: 25.7 ms
+    setAttr（运行时查表）: 45.7 ms
+    编译期选好写法（attrStr / attrBool / setClass 直接调用）: 27 ms
+  spread：10k 元素
+    静态 · 本实验 spread（merge + spread，10k 个，每个 7 个键含 class 拼接与 1 个事件）: 54.1 ms
+    静态 · 07 lean（对象层）: 47 ms
+    静态 · 07 lean + flat + light + hoistSet: 43.1 ms
+    2 个 getter 键 · 本实验（响应式内核：07 的 core）: 67.8 ms
+    2 个 getter 键 · 07 lean（对象层）: 65.6 ms
+    2 个 getter 键 · 07 lean + flat + light + hoistSet: 68.3 ms
+    更新：一万个元素各 2 个属性 · 本实验: 12.1 ms
+    更新：一万个元素各 2 个属性 · 07 lean: 10.6 ms
+    动态键层 · 本实验（{...(cond ? a : b)}，10k 个，每个一个 effect；键比上面少，不能直接比）: 32.5 ms
+
+firefox
+  setAttr：10k 元素 × 10 属性
+    直接 setAttribute（下限，语义不对：hidden=false 会写成 "false"）: 71 ms
+    手写对的语义（className、布尔分支）: 57 ms
+    setAttr（运行时查表）: 83 ms
+    编译期选好写法（attrStr / attrBool / setClass 直接调用）: 50 ms
+  spread：10k 元素
+    静态 · 本实验 spread（merge + spread，10k 个，每个 7 个键含 class 拼接与 1 个事件）: 128 ms
+    静态 · 07 lean（对象层）: 132 ms
+    静态 · 07 lean + flat + light + hoistSet: 141 ms
+    2 个 getter 键 · 本实验（响应式内核：07 的 core）: 143 ms
+    2 个 getter 键 · 07 lean（对象层）: 149 ms
+    2 个 getter 键 · 07 lean + flat + light + hoistSet: 146 ms
+    更新：一万个元素各 2 个属性 · 本实验: 22 ms
+    更新：一万个元素各 2 个属性 · 07 lean: 20 ms
+    动态键层 · 本实验（{...(cond ? a : b)}，10k 个，每个一个 effect；键比上面少，不能直接比）: 128 ms
+
+webkit
+  setAttr：10k 元素 × 10 属性
+    直接 setAttribute（下限，语义不对：hidden=false 会写成 "false"）: 46 ms
+    手写对的语义（className、布尔分支）: 35 ms
+    setAttr（运行时查表）: 46 ms
+    编译期选好写法（attrStr / attrBool / setClass 直接调用）: 38 ms
+  spread：10k 元素
+    静态 · 本实验 spread（merge + spread，10k 个，每个 7 个键含 class 拼接与 1 个事件）: 64 ms
+    静态 · 07 lean（对象层）: 54 ms
+    静态 · 07 lean + flat + light + hoistSet: 55 ms
+    2 个 getter 键 · 本实验（响应式内核：07 的 core）: 66 ms
+    2 个 getter 键 · 07 lean（对象层）: 62 ms
+    2 个 getter 键 · 07 lean + flat + light + hoistSet: 64 ms
+    更新：一万个元素各 2 个属性 · 本实验: 13 ms
+    更新：一万个元素各 2 个属性 · 07 lean: 11 ms
+    动态键层 · 本实验（{...(cond ? a : b)}，10k 个，每个一个 effect；键比上面少，不能直接比）: 31 ms

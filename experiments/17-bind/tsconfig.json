@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": [],
+    "paths": {
+      "@hilt/runtime": ["./runtime-types.d.ts"]
+    }
+  },
+  "include": ["./jsx.d.ts", "./runtime-types.d.ts", "./hilt.ts", "./types-check.tsx", "./types-auto.tsx", "./cases/*.tsx"]
+}

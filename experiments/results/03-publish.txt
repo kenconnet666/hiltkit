@@ -1,0 +1,89 @@
+
+== 开发服务器 + 预编译组件库 ==
+ok   class 跨三层拼接（库内部 + 使用方）
+ok   使用方的 data 属性透传到底层 button
+ok   库内部的 data-part 保留
+ok   title 初值
+ok   改 title 只走那一个键
+ok   title 变 undefined 后属性消失
+ok   动态 spread 的键出现
+ok   动态 spread 盖过静态层
+ok   动态 spread 的键消失
+ok   使用方事件执行、派生值更新
+ok   库内部事件也执行
+ok   使用方写的子节点随状态更新
+ok   preventDefault 跳过库内部处理
+ok   受管属性跟着 prop
+ok   加载态分支渲染，别的子节点没丢
+ok   加载态分支卸载
+ok   双向绑定：子改父
+ok   父级界面跟着变
+ok   双向绑定：父改子
+ok   库内部派生的属性也变
+ok   列表初始 2 行
+ok   deep 状态 push 后列表更新
+
+== 生产构建 ==
+ok   class 跨三层拼接（库内部 + 使用方）
+ok   使用方的 data 属性透传到底层 button
+ok   库内部的 data-part 保留
+ok   title 初值
+ok   改 title 只走那一个键
+ok   title 变 undefined 后属性消失
+ok   动态 spread 的键出现
+ok   动态 spread 盖过静态层
+ok   动态 spread 的键消失
+ok   使用方事件执行、派生值更新
+ok   库内部事件也执行
+ok   使用方写的子节点随状态更新
+ok   preventDefault 跳过库内部处理
+ok   受管属性跟着 prop
+ok   加载态分支渲染，别的子节点没丢
+ok   加载态分支卸载
+ok   双向绑定：子改父
+ok   父级界面跟着变
+ok   双向绑定：父改子
+ok   库内部派生的属性也变
+ok   列表初始 2 行
+ok   deep 状态 push 后列表更新
+
+== 使用方没有任何插件 ==
+ok   无插件：组件库能渲染、class 合并
+ok   无插件：手写 getter 的响应式能穿过组件库
+ok   无插件：事件合并
+
+== 指标 ==
+{
+  "dev": {
+    "server ready ms": 80,
+    "first paint ms (cold, includes prebundle)": 489,
+    "requests": 7,
+    "requests to lib source (not prebundled)": 0,
+    "errors": []
+  },
+  "prod": {
+    "app bundle bytes": 14080,
+    "app bundle gzip": 5588,
+    "NeverUsed tree-shaken": true,
+    "errors": []
+  },
+  "plain": {
+    "errors": []
+  },
+  "abi": {
+    "symbols imported by compiled lib": [
+      "omit",
+      "bindable",
+      "signal",
+      "template",
+      "spread",
+      "merge",
+      "insert",
+      "component",
+      "effect",
+      "setAttr",
+      "on",
+      "For"
+    ]
+  }
+}

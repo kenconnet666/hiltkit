@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "types": [],
+    "jsx": "react-jsx",
+    "jsxImportSource": "exp06",
+    "paths": {
+      "exp06": ["./types/index.d.ts"],
+      "exp06/*": ["./types/*"]
+    }
+  },
+  "include": ["types/**/*.d.ts", "cases/**/*"]
+}

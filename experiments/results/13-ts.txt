@@ -1,0 +1,43 @@
+
+== 类型检查与声明生成（vue-tsx-pro/packages/ui，3 轮中位数）==
+| 版本 | 检查总耗时 s | Check time s | 内存 MB | 文件 | 实例化 | 错误数 |
+| --- | --- | --- | --- | --- | --- | --- |
+| TS 7.1 beta | 6.16 | 3.81 | 754 | 2514 | 3128025 | 0 |
+| TS 7.0.2 | 6.86 | 4.53 | 1228 | 2514 | 3510073 | 0 |
+| TS 6.0.3 | 31.32 | 23.15 | 1201 | 2514 | 1846864 | 0 |
+
+TS 7.1 比 TS 6 快 5.1 倍
+
+| 版本 | 声明生成总耗时 s |
+| --- | --- |
+| TS 7.1 beta | 6.37 |
+| TS 7.0.2 | 7.49 |
+| TS 6.0.3 | 33.42 |
+
+TS 7.1 单线程（--singleThreaded）：14.18 s
+
+== 逐文件处理（真实 222 个 TSX、1818 KB；生成 301 个、588 KB；单线程，热身后 5 轮中位数）==
+| 操作 | 真实组件库 ms/文件 | 全部 ms | 生成组件库 ms/文件 |
+| --- | --- | --- | --- |
+| Babel 解析 | 1.603 | 356 | 0.513 |
+| Babel 解析 + 遍历 | 1.773 | 394 | 0.605 |
+| oxc 解析 | 0.416 | 92 | 0.151 |
+| oxc 解析 + 遍历（转成 JS 对象） | 2.065 | 458 | 0.842 |
+| TS 7 建语法树（跨进程） | 2.609 | 579 | 1.138 |
+| TS 7 建语法树 + 遍历（跨进程） | 2.811 | 624 | 1.214 |
+| TS 6 去类型 transpileModule | 8.052 | 1788 | 3.084 |
+| TS 7 去类型 transpileModule（跨进程） | 失败：panic: interface conversion: interface {} is string, not float64
+goroutine 1 [running]:
+runtime/debu | | |
+| oxc 去类型 | 0.441 | 98 | 0.104 |
+
+原型编译器（Babel 全流程：解析、遍历改写、生成、source map）：8.31 ms/文件
+info RetainedSourceFile 的字段：sourceFile, lease, onDispose, disposed, disposePromise；原型方法：constructor, dispose, disposeWorker
+info 样本 26905 字符，TS 节点 4129，Babel 节点 3923
+info printer.printNode 打印整个文件：25379 字符
+info 新建 API（启动 tsc 子进程）到第一次返回：103 ms
+info 从 Button.tsx 建程序：320 ms；取导出 3 个：0.7 ms；一次检查器往返：0.211 ms
+
+== 语言服务（tsc --lsp，vue-tsx-pro/packages/ui）==
+TS 7.1 beta：初始化 206 ms；打开文件到第一次悬停 1543 ms（有结果）；再次悬停 0.7 ms；跳转定义 0.9 ms（有结果）；补全 1088.0 ms（1151 项）
+TS 7.0.2：初始化 227 ms；打开文件到第一次悬停 1716 ms（有结果）；再次悬停 2.2 ms；跳转定义 0.8 ms（有结果）；补全 1141.9 ms（1136 项）

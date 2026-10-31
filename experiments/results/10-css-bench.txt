@@ -1,0 +1,53 @@
+## 基准（1000 行 / 按钮，9 轮中位数）
+
+### 1000 行样式更新
+
+| 场景（次数） | sx 拆分（bind/select） ms | sx 整段 effect ms | 手写类 + 元素变量 ms | 条件走 data 属性 ms |
+| --- | --- | --- | --- | --- |
+| widths ×20 | 342.3 | 401.8 | 310.3 | 366.3 |
+| oneWidth ×20 | 12.2 | 11.3 | 14.3 | 11.8 |
+| hot ×10 | 211.4 | 210.3 | 241.3 | 202.6 |
+| unrelated ×10 | 0.1 | 0.1 | 0.1 | 0 |
+| theme ×4 | 67.2 | 84.8 | 76.1 | 72.4 |
+| 挂载（首次渲染） | 126.7 | 118 | 72.7 | 134 |
+| 卸载（停全部 effect） | 0.5 | 0.6 | 0.5 | 0.6 |
+| 挂载后堆内存增量 KB（GC 后，含 DOM） | 4395 | 4516 | 2564 | 4506 |
+| 挂载后存活的 effect 数 | 3003 | 4003 | 3003 | 3003 |
+
+每次状态变化平均：DOM 改动（按属性名）/ CSSOM 改动 / 引擎求值（evaluations）、换类（reshapes）、新建 effect 数
+
+| 场景 | sx 拆分（bind/select） | sx 整段 effect | 手写类 + 元素变量 | 条件走 data 属性 |
+| --- | --- | --- | --- | --- |
+| widths | DOM style×1000；CSSOM 无；求值 1000，换类 0，新建 effect 0 | DOM style×1000；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM style×1000；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM style×1000；CSSOM 无；求值 1000，换类 0，新建 effect 0 |
+| oneWidth | DOM style×1；CSSOM 无；求值 1，换类 0，新建 effect 0 | DOM style×1；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM style×1；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM style×1；CSSOM 无；求值 1，换类 0，新建 effect 0 |
+| hot | DOM class×1000；CSSOM 无；求值 1000，换类 1000，新建 effect 0 | DOM class×1000；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM class×1000；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM data-hot×1000；CSSOM 无；求值 0，换类 0，新建 effect 0 |
+| unrelated | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 |
+| theme | DOM class×1；CSSOM 无；求值 1，换类 1，新建 effect 0 | DOM class×1；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM class×1；CSSOM 无；求值 1，换类 1，新建 effect 0 | DOM class×1；CSSOM 无；求值 1，换类 1，新建 effect 0 |
+
+### 1000 个按钮（配方）
+
+| 场景（次数） | 配方 button({ variant, size }) ms | 直接写 sx 数组（查表 + 条件） ms | 静态 sx（下限） ms |
+| --- | --- | --- | --- |
+| size ×10 | 291.2 | 277.5 | 6.8 |
+| variant ×10 | 69.7 | 70.9 | 6.7 |
+| unrelated ×10 | 0.1 | 0 | 0 |
+| 挂载（首次渲染） | 135.6 | 118.2 | 94.6 |
+| 卸载（停全部 effect） | 0.6 | 0.6 | 0.5 |
+| 挂载后堆内存增量 KB（GC 后，含 DOM） | 5094 | 4713 | 3065 |
+| 挂载后存活的 effect 数 | 3003 | 3003 | 1003 |
+
+每次状态变化平均：DOM 改动（按属性名）/ CSSOM 改动 / 引擎求值（evaluations）、换类（reshapes）、新建 effect 数
+
+| 场景 | 配方 button({ variant, size }) | 直接写 sx 数组（查表 + 条件） | 静态 sx（下限） |
+| --- | --- | --- | --- |
+| size | DOM class×2000；CSSOM 无；求值 2000，换类 2000，新建 effect 0 | DOM class×2000；CSSOM 无；求值 3000，换类 2000，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 |
+| variant | DOM class×1000；CSSOM 无；求值 1000，换类 1000，新建 effect 0 | DOM class×1000；CSSOM 无；求值 1000，换类 1000，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 |
+| unrelated | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 | DOM 无；CSSOM 无；求值 0，换类 0，新建 effect 0 |
+
+ok   配方：切 size 每个按钮求值 2 次（root、icon），label 部件不求值
+ok   配方：切 variant 每个按钮求值 1 次（只有 root 用到 variant）
+ok   配方：无关状态一次求值都没有
+ok   行：各种写法逐元素算出的样式一致（初始 + 每步状态变化后）
+ok   按钮：各种写法逐元素算出的样式一致（初始 + 每步状态变化后）
+
+断言 5/5 通过

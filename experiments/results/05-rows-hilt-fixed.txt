@@ -1,0 +1,32 @@
+
+== 耗时 ms（中位数，7 轮，含强制布局） ==
+ | hilt-prototype
+create 1000 | 51.3
+replace 1000 | 59
+update every 10th | 14.3
+select row | 0.1
+swap rows | 4.5
+remove row | 4.4
+clear | 6
+create 10000 | 593.3
+
+== 其中脚本耗时 ms（不含强制布局） ==
+ | hilt-prototype
+create 1000 | 11.5
+replace 1000 | 17.7
+update every 10th | 0.7
+select row | 0.1
+swap rows | 0.7
+remove row | 0.6
+clear | 5.9
+create 10000 | 113.1
+
+== 体积与内存 ==
+ | hilt-prototype
+bundle minified bytes | 8966
+bundle gzip bytes | 3754
+JS heap after create 10000 (KB, 净增) | 12831
+
+== DOM 结果校验 ==
+hilt-prototype: OK
+  首行: <tr class=""><td>2001</td><td><a>quaint white burger</a></td><td><a class="remove">x</a></td></tr>

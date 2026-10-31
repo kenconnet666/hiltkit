@@ -1,0 +1,20 @@
+{
+  "name": "exp-06-types",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit -p tsconfig.json",
+    "check:ts6": "node node_modules/typescript6/bin/tsc --noEmit -p tsconfig.json",
+    "probe:ls": "node ls-probe.mjs",
+    "probe:lsp": "node lsp-probe.mjs",
+    "probe:complete": "node ls-complete.mjs",
+    "perf:gen": "node perf/gen.mjs 300",
+    "perf:run": "node perf/run.mjs",
+    "errors": "node show-errors.mjs"
+  },
+  "dependencies": {
+    "csstype": "^3.2.3",
+    "typescript": "^7.0.2",
+    "typescript6": "npm:typescript@^6.0.3"
+  }
+}

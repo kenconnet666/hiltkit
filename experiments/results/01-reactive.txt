@@ -1,0 +1,12 @@
+case | core | coreDirect | alien | vue35 | vue36 | preact | solid2
+create 100k signal | 15.01 | 17.49 | 8.83 | 19.79 | 17.88 | 17.24 | 23.44
+create 100k computed | 18.57 | 20.94 | 11.27 | 33.58 | 27.93 | 28.87 | 59.01
+create+dispose 100k effect | 25.96 | 21.81 | 19.3 | 19.55 | 37.04 | 11.59 | 53.58
+fanout 1->10k x100 | 84.38 | 78.41 | 73.16 | 87.56 | 67.92 | 77.78 | 387.58
+chain 1000 x1000 | 80.92 | 65.75 | 63.21 | 197.47 | 89.93 | 126.13 | 399.93
+diamond 1000 x1000 | 108.03 | 101.78 | 118.62 | 273.06 | 116.56 | 172.91 | 484.53
+dynamic deps 1000 effects x200 | 37.88 | 36.56 | 29.02 | 43.56 | 33.16 | 49.68 | 123.75
+bytes per signal+effect | 705 | 657 | 497 | 634 | 673 | 545 | 1105
+alien {"mount 10k row proxies":15.71,"write 10k row.done":20.04}
+vue35 {"mount 10k row proxies":9.47,"write 10k row.done":24.45}
+vue36 {"mount 10k row proxies":8.58,"write 10k row.done":20.17}

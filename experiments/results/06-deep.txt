@@ -1,0 +1,20 @@
+plain done
+manual done
+state done
+stateEager done
+vue done
+
+N=10000                                       plain      manual       state  stateEager         vue
+创建 1 万行（ms）                                    1.2         2.4         1.5         2.7         1.6
+首次全读 1 万行（ms）                                  0.1         0.2        21.6        39.3        25.8
+建 1 万个 effect（ms）                              0.3         3.2         6.7         7.7        13.3
+写全部 done + flush（ms）                           0.1         1.2        13.7        19.0        32.9
+不追踪遍历 ×100（ms）                                 5.8        17.6       751.4       980.7      1066.8
+字节/行 只读                                         80         272         168         678         112
+字节/行 每行一个 effect                                 -         722         931        1064        1001
+includes 末尾元素 ×100（ms）                         0.5           -         0.6         0.5         0.5
+  同上，不改写方法（经陷阱）                                  -           -       494.5       620.6           -
+map(r=>r.id) 1 万行 ×100（ms）                    15.6           -       170.4       196.7       347.8
+  同上，不改写方法（经陷阱）                                  -           -       610.7       749.0           -
+
+plain=无响应式；manual=每字段一个 signal；state=懒建；stateEager=任何读都建（Svelte 式）；vue=@vue/reactivity（effect 同步，无批处理）

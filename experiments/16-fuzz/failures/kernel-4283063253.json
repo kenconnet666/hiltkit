@@ -1,0 +1,696 @@
+{
+ "seed": 4283063253,
+ "kind": "extra-run",
+ "message": "extra-run: {\"path\":\"/16/15\",\"instance\":0,\"real\":3,\"model\":2,\"dead\":true,\"kind\":\"render\"}",
+ "case": {
+  "nodes": [
+   {
+    "kind": "signal",
+    "init": 0
+   },
+   {
+    "kind": "signal",
+    "init": 0
+   },
+   {
+    "kind": "signal",
+    "init": 0
+   },
+   {
+    "kind": "signal",
+    "init": 0
+   },
+   {
+    "kind": "signal",
+    "init": 0
+   },
+   {
+    "kind": "computed",
+    "expr": {
+     "e": "sum",
+     "args": []
+    }
+   },
+   {
+    "kind": "computed",
+    "expr": {
+     "e": "n",
+     "id": 0
+    }
+   }
+  ],
+  "roots": [
+   {
+    "id": 0,
+    "kind": "render",
+    "probe": false,
+    "body": [
+     {
+      "s": "when",
+      "e": {
+       "e": "mod",
+       "k": 0,
+       "arg": {
+        "e": "n",
+        "id": 0
+       }
+      },
+      "then": [
+       {
+        "s": "child",
+        "def": {
+         "id": 0,
+         "kind": "effect",
+         "probe": false,
+         "body": [
+          {
+           "s": "child",
+           "def": {
+            "id": 0,
+            "kind": "effect",
+            "probe": false,
+            "body": []
+           }
+          },
+          {
+           "s": "read",
+           "e": {
+            "e": "if",
+            "test": {
+             "e": "sum",
+             "args": [
+              {
+               "e": "n",
+               "id": 4
+              }
+             ]
+            },
+            "a": {
+             "e": "mod",
+             "k": 0,
+             "arg": {
+              "e": "n",
+              "id": 5
+             }
+            },
+            "b": {
+             "e": "n",
+             "id": 7
+            }
+           },
+           "tracked": true
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": 16,
+    "kind": "effect",
+    "probe": true,
+    "body": [
+     {
+      "s": "child",
+      "def": {
+       "id": 10,
+       "kind": "user",
+       "probe": true,
+       "body": [
+        {
+         "s": "when",
+         "e": {
+          "e": "if",
+          "test": {
+           "e": "n",
+           "id": 6
+          },
+          "a": {
+           "e": "n",
+           "id": 1
+          },
+          "b": {
+           "e": "c",
+           "v": 0
+          }
+         },
+         "then": [
+          {
+           "s": "child",
+           "def": {
+            "id": 9,
+            "kind": "render",
+            "probe": true,
+            "body": [
+             {
+              "s": "read",
+              "e": {
+               "e": "if",
+               "test": {
+                "e": "if",
+                "test": {
+                 "e": "n",
+                 "id": 3
+                },
+                "a": {
+                 "e": "n",
+                 "id": 1
+                },
+                "b": {
+                 "e": "n",
+                 "id": 7
+                }
+               },
+               "a": {
+                "e": "sum",
+                "args": [
+                 {
+                  "e": "n",
+                  "id": 1
+                 },
+                 {
+                  "e": "c",
+                  "v": 2
+                 }
+                ]
+               },
+               "b": {
+                "e": "n",
+                "id": 5
+               }
+              },
+              "tracked": false
+             },
+             {
+              "s": "read",
+              "e": {
+               "e": "mod",
+               "k": 2,
+               "arg": {
+                "e": "mod",
+                "k": 2,
+                "arg": {
+                 "e": "n",
+                 "id": 0
+                }
+               }
+              },
+              "tracked": false
+             }
+            ]
+           }
+          }
+         ]
+        },
+        {
+         "s": "read",
+         "e": {
+          "e": "if",
+          "test": {
+           "e": "n",
+           "id": 5
+          },
+          "a": {
+           "e": "n",
+           "id": 7
+          },
+          "b": {
+           "e": "sum",
+           "args": [
+            {
+             "e": "n",
+             "id": 2
+            },
+            {
+             "e": "n",
+             "id": 5
+            },
+            {
+             "e": "n",
+             "id": 0
+            }
+           ]
+          }
+         },
+         "tracked": true
+        }
+       ]
+      }
+     },
+     {
+      "s": "when",
+      "e": {
+       "e": "sum",
+       "args": [
+        {
+         "e": "n",
+         "id": 6
+        },
+        {
+         "e": "c",
+         "v": 1
+        }
+       ]
+      },
+      "then": [
+       {
+        "s": "child",
+        "def": {
+         "id": 13,
+         "kind": "render",
+         "probe": true,
+         "body": [
+          {
+           "s": "read",
+           "e": {
+            "e": "if",
+            "test": {
+             "e": "sum",
+             "args": [
+              {
+               "e": "n",
+               "id": 6
+              },
+              {
+               "e": "n",
+               "id": 5
+              }
+             ]
+            },
+            "a": {
+             "e": "n",
+             "id": 0
+            },
+            "b": {
+             "e": "n",
+             "id": 7
+            }
+           },
+           "tracked": true
+          },
+          {
+           "s": "when",
+           "e": {
+            "e": "if",
+            "test": {
+             "e": "n",
+             "id": 0
+            },
+            "a": {
+             "e": "n",
+             "id": 4
+            },
+            "b": {
+             "e": "c",
+             "v": 2
+            }
+           },
+           "then": [
+            {
+             "s": "child",
+             "def": {
+              "id": 11,
+              "kind": "effect",
+              "probe": true,
+              "body": [
+               {
+                "s": "read",
+                "e": {
+                 "e": "sum",
+                 "args": [
+                  {
+                   "e": "sum",
+                   "args": [
+                    {
+                     "e": "n",
+                     "id": 7
+                    },
+                    {
+                     "e": "n",
+                     "id": 5
+                    }
+                   ]
+                  },
+                  {
+                   "e": "if",
+                   "test": {
+                    "e": "n",
+                    "id": 6
+                   },
+                   "a": {
+                    "e": "n",
+                    "id": 6
+                   },
+                   "b": {
+                    "e": "n",
+                    "id": 6
+                   }
+                  },
+                  {
+                   "e": "n",
+                   "id": 7
+                  }
+                 ]
+                },
+                "tracked": false
+               }
+              ]
+             }
+            }
+           ]
+          },
+          {
+           "s": "child",
+           "def": {
+            "id": 12,
+            "kind": "effect",
+            "probe": true,
+            "body": [
+             {
+              "s": "read",
+              "e": {
+               "e": "if",
+               "test": {
+                "e": "n",
+                "id": 7
+               },
+               "a": {
+                "e": "n",
+                "id": 1
+               },
+               "b": {
+                "e": "mod",
+                "k": 3,
+                "arg": {
+                 "e": "n",
+                 "id": 7
+                }
+               }
+              },
+              "tracked": true
+             }
+            ]
+           }
+          },
+          {
+           "s": "cleanup"
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "s": "read",
+      "e": {
+       "e": "if",
+       "test": {
+        "e": "n",
+        "id": 6
+       },
+       "a": {
+        "e": "mod",
+        "k": 3,
+        "arg": {
+         "e": "c",
+         "v": 1
+        }
+       },
+       "b": {
+        "e": "sum",
+        "args": [
+         {
+          "e": "n",
+          "id": 6
+         },
+         {
+          "e": "c",
+          "v": 2
+         },
+         {
+          "e": "n",
+          "id": 7
+         }
+        ]
+       }
+      },
+      "tracked": true
+     },
+     {
+      "s": "child",
+      "def": {
+       "id": 15,
+       "kind": "render",
+       "probe": true,
+       "body": [
+        {
+         "s": "cleanup"
+        },
+        {
+         "s": "read",
+         "e": {
+          "e": "if",
+          "test": {
+           "e": "n",
+           "id": 4
+          },
+          "a": {
+           "e": "if",
+           "test": {
+            "e": "c",
+            "v": 2
+           },
+           "a": {
+            "e": "n",
+            "id": 5
+           },
+           "b": {
+            "e": "n",
+            "id": 0
+           }
+          },
+          "b": {
+           "e": "sum",
+           "args": [
+            {
+             "e": "n",
+             "id": 7
+            },
+            {
+             "e": "n",
+             "id": 4
+            }
+           ]
+          }
+         },
+         "tracked": true
+        },
+        {
+         "s": "when",
+         "e": {
+          "e": "sum",
+          "args": [
+           {
+            "e": "n",
+            "id": 0
+           },
+           {
+            "e": "n",
+            "id": 2
+           },
+           {
+            "e": "n",
+            "id": 3
+           }
+          ]
+         },
+         "then": [
+          {
+           "s": "child",
+           "def": {
+            "id": 14,
+            "kind": "render",
+            "probe": true,
+            "body": [
+             {
+              "s": "read",
+              "e": {
+               "e": "n",
+               "id": 5
+              },
+              "tracked": true
+             },
+             {
+              "s": "cleanup"
+             }
+            ]
+           }
+          },
+          {
+           "s": "read",
+           "e": {
+            "e": "mod",
+            "k": 2,
+            "arg": {
+             "e": "c",
+             "v": 1
+            }
+           },
+           "tracked": true
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  ],
+  "steps": [
+   {
+    "ops": [
+     {
+      "o": "w",
+      "id": 4,
+      "v": 1
+     },
+     {
+      "o": "stale",
+      "pick": 980
+     },
+     {
+      "o": "w",
+      "id": 0,
+      "v": 0
+     },
+     {
+      "o": "r",
+      "id": 4
+     }
+    ],
+    "flush": "sync"
+   },
+   {
+    "ops": [
+     {
+      "o": "w",
+      "id": 1,
+      "v": 0
+     },
+     {
+      "o": "stale",
+      "pick": 655
+     },
+     {
+      "o": "w",
+      "id": 1,
+      "v": 1
+     }
+    ],
+    "flush": "sync"
+   },
+   {
+    "ops": [
+     {
+      "o": "w",
+      "id": 3,
+      "v": 0
+     }
+    ],
+    "flush": "sync"
+   },
+   {
+    "ops": [
+     {
+      "o": "w",
+      "id": 3,
+      "v": 2
+     }
+    ],
+    "flush": "sync"
+   },
+   {
+    "ops": [
+     {
+      "o": "w",
+      "id": 3,
+      "v": 0
+     },
+     {
+      "o": "w",
+      "id": 1,
+      "v": 0
+     }
+    ],
+    "flush": "sync"
+   },
+   {
+    "ops": [
+     {
+      "o": "w",
+      "id": 4,
+      "v": 0
+     },
+     {
+      "o": "d",
+      "pick": 116
+     },
+     {
+      "o": "r",
+      "id": 3
+     },
+     {
+      "o": "r",
+      "id": 3
+     }
+    ],
+    "flush": "sync"
+   },
+   {
+    "ops": [
+     {
+      "o": "w",
+      "id": 4,
+      "v": 2
+     },
+     {
+      "o": "w",
+      "id": 4,
+      "v": 1
+     },
+     {
+      "o": "w",
+      "id": 0,
+      "v": 2
+     },
+     {
+      "o": "r",
+      "id": 1
+     },
+     {
+      "o": "r",
+      "id": 5
+     }
+    ],
+    "flush": "sync"
+   },
+   {
+    "ops": [
+     {
+      "o": "w",
+      "id": 0,
+      "v": 2
+     },
+     {
+      "o": "stale",
+      "pick": 979
+     }
+    ],
+    "flush": "sync"
+   }
+  ],
+  "writers": false
+ }
+}

@@ -1,0 +1,184 @@
+18-types：把完整类型接到 18-plain（零编译：标准 TS JSX + 运行时，组件是普通函数）
+===================================================================================
+
+环境：Windows 11，Xeon E5-2698B v3（32 线程），Node 24.18；TypeScript 7.1.0-beta（13-ts/node_modules/typescript）。
+另外在 7.0.2（ts70）、6.0.3（ts6）上跑了根工程，都是零错误。
+测量时机器上还有别的任务（Chrome 12 个进程、node 6 个、另一个 tsc、随机测试代理在写 18-plain/fuzz、作者同时在改 hilt/index.ts），
+开测前 CPU 约 13%，数字有干扰；表里给了 3 轮的最小~最大，串行跑，3 轮取中位数。
+复现：cd 18-plain；node scripts/check.mjs（回归门）；node perf/gen.mjs 300 && node perf/gen.mjs 1000；
+node perf/run.mjs --n=0,300,1000；node perf/lsp.mjs --n=300,1000 --variants=typed,loose。
+
+
+一、覆盖情况
+------------
+
+回归门 node scripts/check.mjs 六项全过：根工程（types-check.tsx、cases、type-cases）、port（ui.tsx、types.tsx）、组件库发布（生成 .d.ts）、
+使用方（只看 .d.ts）、属性→token 组反向表与 token-map.ts 一致、事件驼峰表对照 lib.dom。
+每个 @ts-expect-error 都必须真的报错（未命中是 TS2578），所以“零错误”同时意味着正例通过、负例全部命中。
+负例数量（@ts-expect-error 指令数）：types-check 28、port/types 30（原 22，新增 8）、lib/consumer 10（原 6，新增 4）全部继续命中；新增 type-cases：elements 64、events 13、
+css 32、recipe-theme 30、generated-attrs 42（由运行时规则表生成），共 181 条，加上 port / consumer 的 12 条，新增约 193 条。
+用 scripts/show-errors.mjs 去掉指令后逐条核对过报错落点和信息。
+运行时回归没动：port/run.mjs 58 ok、run.mjs 99 ok、lib/run.mjs 23 ok。
+
+1. 元素属性（hilt/types/*.ts，jsx-runtime.ts 对外导出）
+  HtmlProps<K>（可带第二个参数：组件自己管理的属性）、SvgProps<K>      OK    全部 HTML 标签 + SVG 标签（约 30 个有专属属性）；a / script / style / title 同名按 HTML
+  事件 onXxx：精确类型，currentTarget 是该元素                       OK    HTML、SVG、自定义元素都验证；on:名字 逃生口
+  后缀 Capture / Once / Passive                                      限制  常用 33 个事件的单个后缀精确，其余与组合后缀走模式索引签名（沿用 15-types，事件键 209 个 + 15 个模式）
+  ref：Sig 或回调                                                    OK    set 写成属性（参数逆变）：别的元素的 Sig、不收 null 的 Sig 都被拒（旧写法是方法，双变，会放过）
+  class：字符串 / 数组 / 对象 / 函数，可嵌套                         OK    函数返回值、数组里的函数、对象值的函数都收；数字不收
+  style：字符串、对象、返回它们的函数；字段值可以是函数              OK    csstype 的 Properties，长度只收字符串和 0；--x 自定义属性收数字
+  aria-*、data-*、role                                               OK    aria 取值枚举严格；data-* 用模式索引签名，false 合法
+  所有普通属性 T | ReadSig<T>                                        OK    由 Live<…> 从静态属性表派生，表里不重复写；读取函数返回的类型同样检查
+  value / checked 收 Sig<T>                                          OK    input、textarea、select 的 value，input 的 checked（运行时的 TWO_WAY）；见限制 4
+  cond && 'x' 写到字符串属性要报错                                   OK    值和读取函数返回值都拦（id / title / href / aria-label / tabindex）
+  React 拼写报错并提示                                               OK    运行时 ALIAS 表 13 个全部校验 + 常见驼峰（tabIndex、maxLength…）+ SVG 驼峰 + onDoubleClick + defaultValue；报错里出现 WriteAs<"class">
+  布尔属性                                                           OK    运行时 BOOL 表 29 个由脚本生成用例：收 true / false / 读取函数，拒字符串
+  自定义元素                                                         OK    声明合并 CustomElements（props / element / events）
+  key                                                                做不到 类型层看不到“是不是列表行”，任何元素都收 key（沿用 15-types）
+2. 样式（hilt/css 导出）
+  create（静态 / 动态 / 条件 / token，第二个参数 label）             OK
+  recipe                                                             OK    档位名与取值推断；取值收值 / Sig / derived / 读取函数；布尔档位收 boolean；定义时拼错档位、部件、token 都报错
+  defineTokens / defineVars / createTheme / themeStyle               OK    createTheme 的覆盖必须是 token 的子集；themeStyle 的结果是合法的 sx 项
+  defineConditions                                                   限制  运行时没有返回值，类型返回 void；登记写法见限制 6
+  keyframes / configure / renderStyleTag                             OK
+  sx：样式项、假值、函数（返回样式项）、嵌套数组                     OK    函数返回的东西同样检查；对象字面量拼错属性、token、条件别名都报错
+  token 按属性分组补全                                               OK    LSP 实测：padding 只有 space 组 8 项，color 只有 colors 组 24 项，条件键含登记的 _loading / _md
+  button({ size }) 的部件展开 / merge(s.root, rest)                  OK    PartAttrs 是 { sx, data-scope, data-part }，展开到元素和 merge 都过
+  TokenSets / ConditionSets 登记                                     OK    declare module 'hilt/css'；自定义元素登记 declare module 'hilt/jsx-runtime'
+3. port/ui.tsx 去掉 styles.ts 的包装：import 改成 'hilt/css'，零错误；styles.ts 已删除。
+   port/types.tsx 里 `demo().root.sx satisfies readonly unknown[]` 一行改成 `satisfies SxStyles`（sx 现在是真实类型）。
+
+
+二、做不到 / 有限制 / 与 15-types 不同的条目
+-------------------------------------------
+
+1. merge 里的字面量会被 TS 放宽成 string（hilt/index.ts 里 merge 的签名不是 const 泛型）。
+   `<img {...merge({ loading: 'lazy' })} />` 和 `<div {...merge({ 'aria-live': 'polite' })} />` 因此报错；条件表达式返回的字面量（`() => (c ? 'true' : undefined)`）不受影响。
+   ui.tsx 里只有 `merge({ type: 'checkbox' })` 踩到：所以 input 的 type 额外收任意字符串（补全仍有 InputType）。
+   我在草稿里验证过：merge 改成 `<const T extends readonly (object | null | undefined | false)[]>` 这两个报错都消失。这是 index.ts，没动，建议你改。
+2. input 不按 type 分支（15-types 是 8 个变体的联合）：原因同上（type 被放宽成 string 就匹配不上任何变体），min / max / accept 这类也不按 type 检查。
+   type="text" 绑 Sig<number> 不报错（运行时按 el.type 决定写字符串还是数字，类型层读不到动态的 type）。value 收 Sig<string> 或 Sig<number>，
+   不收 Sig<'a' | 'b'>（会被写入任意字符串）、Sig<boolean>。
+3. 布尔属性不收字符串，包括 ''（15-types 收 ''）：`disabled=""` 在 JS 里是假值，组件把 prop 转给原生元素又自己读它时会判反；ui.tsx 的 Switch 就是这种写法。
+4. 能写回的只有运行时认的 TWO_WAY（input / textarea / select 的 value、input 的 checked）；15-types 里 open / files / muted / volume / indeterminate 的绑定在 18-plain 运行时没有，类型里是普通属性。
+5. 内置 Omit<HtmlProps<…>> 会让后缀事件退回通用 Event：Omit 是 Pick<T, Exclude<keyof T, K>>，keyof 联合里的字面量键 onClickCapture 被同一联合里的模式键吞掉。
+   HtmlProps<K, Managed> / SvgProps<K, Managed> 的第二个参数用键重映射，精确类型保留（用例里有对照）。ui.tsx 用的是 Omit，不受影响但后缀事件是通用 Event。
+6. defineConditions 运行时返回 undefined（引擎 declarations.ts），所以 15-types 的 `const c = defineConditions({…}); interface ConditionSets { app: typeof c }` 不能照搬，
+   现在写法：`const aliases = { _loading: '[data-loading]' } as const; defineConditions(aliases); … { app: typeof aliases }`。
+   如果愿意让引擎返回传入的对象（一行），可以改回 15-types 的写法；运行时我没动。
+7. 通用 Event 的后缀事件（模式索引签名）：标注参数类型要带 currentTarget（`FocusEvent & { currentTarget: HTMLDivElement }`），只写 FocusEvent 两个方向都不兼容，报错。
+8. hilt/css 只给 create、recipe、defineTokens、defineVars、createTheme、themeStyle、defineConditions、keyframes、configure、renderStyleTag 声明了类型；
+   引擎还导出的 when、defineMarker、themeBootScript、themeBootClasses、provideStyles、useRecipe、stats、HOT 等 kernel.d.ts 里没声明，TS 里 import 会报“没有导出成员”（运行时有）。
+9. 沿用 15-types 的限制：没有 token 的属性写错关键字（display: 'flxe'）不报错；带组名的 `_space.nope` 只校验组名；静态样式不收 string 变量；
+   以插值开头的模板字符串写在有 token 的属性上被拒；JSX 不检查类型里没有的连字符属性（所以 data-* / Managed 的连字符属性靠模式索引签名 / 显式 never）。
+10. hilt/ 下有三个过期的 .d.ts（css.d.ts、index.d.ts、jsx-runtime.d.ts，12:16 的旧产物，内容是旧 API，含已删除的 push / remove）。没有任何配置引用它们
+    （paths 指向 .ts，同名 .ts 优先），但容易误导；我想删，被权限拦下了，你决定。
+
+
+三、设计要点
+------------
+
+- 类型放 hilt/types/：value（Attr、Live、Bindable、Ref、WriteAs、Child）、attributes（class / style / aria / data / React 拼写）、events、html、svg、elements（汇总、HtmlProps、自定义元素）、
+  css/（取值、token、条件、create / recipe / theme、登记处、反向表）。jsx-runtime.ts 里运行时 4 行没动，其余是类型再导出和 JSX 命名空间。
+- “值或读取函数”只在 Live<T> 里写一次：html.ts / svg.ts / attributes.ts 的接口只写静态取值，HtmlSpecific / SvgSpecific 里 Live<…> 派生；写回的 value / checked 另用 Bindable<R, W>
+  （传值 | 只读函数 | 带 set: (value: W) => void 属性的函数；set 写成属性才有参数逆变）。
+- 引擎声明：kernel.d.ts 的 @hilt/css 块用 typeof import('./hilt/types/css/…') 引用同一份签名，hilt/css.ts 的 export * 原样导出；
+  recipe 例外：css.ts 外面包了一层（档位收读取函数，换成访问器），所以 css.ts 里的 recipe 标注成 Recipe<P, V>，kernel 里是引擎自己的宽松声明。
+- 沿用 15-types 的结论：事件键 209 个 + 模式索引签名，token 用 TokenSets 声明合并登记（模板字面量联合，NotToken 拼错检测），csstype 全量，不对原生元素做 LibraryManagedAttributes 映射（这里完全不需要）。
+- 报错信息：读取函数的返回类型不对时报 “'() => number' is not assignable to type 'Attr<string | undefined>'”，Sig 绑错时报 “'Sig<number>' is not assignable to type 'Bindable<…>'”，都落在属性上。
+
+
+四、成本（TS 7.1 beta，默认 4 个检查器，3 轮中位数）
+---------------------------------------------------
+
+方法：perf/gen.mjs 生成 N 个零编译写法的组件（每个：create 静态 + 动态 + 条件 + token、recipe 3 个档位 + 组合档位 + 默认值且档位传读取函数、
+HtmlProps 转发 rest + merge、SvgProps 展开到 svg、sig / derived / effect / model、事件、class / style、value 绑定、For 列表、sx 数组含函数），
+再生成使用方（每个组件用一次）。变体：typed = 当前类型；loose = 完整类型之前的快照（perf/loose-types：属性是小子集，sx 是 unknown，create / recipe 返回 any），同一份组件源码。
+tsconfig 的 skipLibCheck 是 true（18-plain 一直如此），hilt/types 下是 .ts 源码，照常检查；15-types 是 false，所以另给一组 skipLibCheck=false 的数字方便对比。
+
+4.1 主表（skipLibCheck=true，各工程自己的设置）
+
+| 组件数 | 变体 | 错误 | Total s | Check s（最小~最大） | 内存 MB | 实例化 | 类型 | 符号 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | typed | 0 | 0.32 | 0.23 (0.22~0.23) | 37 | 12337 | 11696 | 46829 |
+| 0 | loose | 0 | 0.11 | 0.03 (0.03~0.03) | 24 | 4627 | 5220 | 38570 |
+| 300 | typed | 0 | 1.73 | 1.53 (1.50~1.63) | 212 | 382510 | 126380 | 473082 |
+| 300 | loose | 0 | 0.66 | 0.46 (0.45~0.47) | 141 | 148645 | 69132 | 326215 |
+| 1000 | typed | 0 | 5.04 | 4.48 (4.46~4.49) | 583 | 904219 | 347875 | 1377793 |
+| 1000 | loose | 0 | 1.78 | 1.30 (1.28~1.42) | 388 | 241847 | 197001 | 938088 |
+
+完整类型相对旧的宽松类型：N=300 检查 +1.07 s（0.46 → 1.53），N=1000 +3.18 s（1.30 → 4.48），约每个组件 +3 ms；内存 +71 / +195 MB。
+固定成本（0 个组件）：类型本身 0.23 s 检查 / 37 MB（loose 0.03 s / 24 MB）。每个组件约 4.3 ms 检查时间（typed）、1.3~1.4 ms（loose）。
+
+4.2 skipLibCheck=false（与 15-types 的设置一致）
+
+| 组件数 | 变体 | 错误 | Total s | Check s（最小~最大） | 内存 MB | 实例化 | 类型 | 符号 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | typed | 0 | 0.57 | 0.46 (0.43~0.47) | 73 | 44130 | 52943 | 78569 |
+| 0 | loose | 0 | 0.54 | 0.46 (0.44~0.48) | 53 | 32762 | 36303 | 61424 |
+| 300 | typed | 0 | 1.96 | 1.73 (1.71~1.74) | 251 | 414268 | 164729 | 502344 |
+| 300 | loose | 0 | 1.06 | 0.82 (0.80~0.83) | 171 | 176613 | 99745 | 348488 |
+| 1000 | typed | 0 | 5.06 | 4.58 (4.49~4.61) | 623 | 935981 | 386226 | 1404483 |
+| 1000 | loose | 0 | 2.12 | 1.62 (1.61~1.74) | 417 | 269815 | 227584 | 959075 |
+
+4.3 与 15-types 基线对比（15-types 的 base 变体）
+
+| 组件数 | results/15-types.txt（当时） | 15-types 今天重测（同一台机器同一时段） | 18-plain typed（skipLibCheck=false） |
+| --- | --- | --- | --- |
+| 0 | Check 0.44 / Total 0.53 s，70 MB，43k 实例化 | Check 0.45 / Total 0.55 s，70 MB，42.7k | Check 0.46 / Total 0.57 s，73 MB，44k |
+| 300 | Check 2.08 / Total 2.29 s，296 MB，650k | Check 2.17 / Total 2.58 s，297 MB，650k | Check 1.73 / Total 1.96 s，251 MB，414k |
+| 1000 | Check 6.12 / Total 6.56 s，766 MB，1.71M | Check 6.12 / Total 7.83 s，769 MB，1.71M | Check 4.58 / Total 5.06 s，623 MB，936k |
+
+18-plain 比 15-types 低约 20%（N=1000 检查 6.12 → 4.58 s，实例化 1.71M → 0.94M）。注意不是同一份负载：15-types 的合成组件用符文宏（_state、_bind、_component、BindableProps），
+LibraryManagedAttributes 映射，每个组件的 DOM 更多；18-plain 的组件是普通函数、Prop / Model。同一台机器同一时段重测 15-types，数字和当时的记录一致（检查时间 ±5%），
+所以“沿用 15-types 的结论”在 18-plain 里没有让成本变差，但不能说成“同样的组件便宜了 20%”。
+与 vue-tsx-pro/packages/ui（15-types 记录：Total 5.10 s，772 MB）比：1000 个这样的组件 Total 5.06 s，623 MB，量级相当。
+
+4.4 语言服务（tsc --lsp，每轮冷启动新进程，3 轮中位数，ms；探针 src/probe.tsx 打开后依次请求）
+
+| 组件数 | 变体 | 初始化 | 首次悬停 | 再次悬停 | 悬停 sx | 改动后悬停 | 诊断 | sx 里 padding 补全（首/再） | color | 条件键 | 组件 prop | 元素属性名 | 事件名 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 300 | typed | 270 | 281 | 1 | 54 | 90 | 86 | 9 / 2（8 项） | 5（24 项） | 3（25 项） | 11（234 项） | 5（318 项） | 5（318 项） |
+| 1000 | typed | 249 | 560 | 1 | 52 | 103 | 74 | 8 / 2（8 项） | 4（24 项） | 3（25 项） | 10（234 项） | 5（318 项） | 6（318 项） |
+| 300 | loose | 263 | 238 | 1 | 1 | 37 | 14 | 3 / 1（0 项） | 2（0 项） | 372（2831 项，补出一堆全局符号） | 10（339 项） | 4（330 项） | 4（330 项） |
+| 1000 | loose | 236 | 474 | 1 | 1 | 54 | 13 | 3 / 1（0 项） | 2（0 项） | 454（3538 项） | 9（339 项） | 4（330 项） | 5（330 项） |
+
+- 15-types 的记录（base）：N=300 首次悬停 236，N=1000 473；padding 补全 11 / 1，color 4~5，组件 prop 16~18 ms。18-plain 首次悬停 281 / 560，高约 20%，
+  补全延迟在同一量级（个位数到十几毫秒）。首次悬停主要是项目加载；之后的悬停 1 ms。
+- 补全内容每轮校验：padding 只给 space 组（_xs _sm _md _lg _xl _none 等 8 项）、color 只给 colors 组（24 项）、条件键含 _hover 和登记的 _loading / _md、
+  组件 prop 含 tone / value / label、元素属性含 id / class / sx / onClick、`onC` 补出 onClick 与 onClickCapture；全部正确。
+- “悬停 sx” 54 ms 是 sx 数组上的悬停（要算 SxStyles 的联合），loose 里 sx 是 unknown 所以 1 ms。
+- 局限同 15-types：直接发 LSP 协议请求，没有在 WebStorm / VS Code 里实测；补全项排序、片段、JSDoc 呈现没验证。
+
+4.5 没量 / 没查
+- 没有定位 typed 比 loose 每个组件多 3 ms 的具体来源（没做消融、没跑 trace）。
+- 没有量 --singleThreaded、--checkers 8、TS 7.0 / 6.0 的耗时（7.0.2 和 6.0.3 只验证了根工程零错误）。
+- 没有量 .d.ts 发布后的消费者场景成本（lib/consumer 只验证了正确性）。
+- 合成组件结构高度一致，真实库的类型多样性更高，只当量级参考。
+- loose 基线用的是改动前的 jsx-runtime.ts / css.ts 快照，为了让同一份组件源码能编译补了两处（导出 SvgProps、details 的 open），css.ts 里 registerSxPrepare 跟着改名；index.ts 用的是测量时的版本。
+
+
+五、改了 / 新增的文件（全在 18-plain/ 和本文件；没有碰 18-plain/fuzz、hilt/index.ts、10-css、15-types、03-publish）
+------------------------------------------------------------------------------------------------------
+
+新增
+  hilt/types/value.ts attributes.ts events.ts html.ts svg.ts elements.ts
+  hilt/types/css/index.ts registry.ts conditions.ts token-types.ts properties.ts property-groups.ts（生成）values.ts styles.ts theme.ts config.ts
+  type-cases/elements.tsx events.tsx css.tsx recipe-theme.tsx theme.ts custom-elements.ts generated-attrs.tsx（生成）
+  scripts/check.mjs show-errors.mjs gen-attr-cases.mjs gen-property-groups.mjs check-events.mjs
+  perf/gen.mjs run.mjs lsp.mjs .gitignore（out/ 不入库）loose-types/（改动前的快照：jsx-runtime.ts、css.ts、kernel.d.ts、styles.ts）
+修改
+  hilt/jsx-runtime.ts   运行时 4 行不变；类型全部移到 hilt/types/，这里是再导出和 JSX 命名空间（IntrinsicAttributes 的 key）
+  hilt/css.ts           加类型标注：recipe 标成 Recipe<P, V>，export type * from './types/css'；行为不变（之后作者又改了开头的 registerStyles，我的标注没受影响）
+  kernel.d.ts           只改 @hilt/css 那一块（引用 hilt/types/css/ 里的签名）
+  tsconfig.json、port/tsconfig.json、lib/tsconfig.json、lib/consumer/tsconfig.json   加 csstype 的 paths；根工程和 port 的 include 改成 hilt/**/*.ts；根工程加 type-cases
+  port/ui.tsx           只改一行 import（'./styles' → 'hilt/css'）
+  port/types.tsx        import 改了；sx 一行；追加元素属性、事件、recipe 部件展开、merge 的正负例
+  lib/consumer/types.tsx 追加元素属性与样式经 .d.ts 转发的正负例
+删除
+  port/styles.ts        临时的类型包装
+
+需要作者决定 / 注意
+  1. hilt/index.ts：merge 改成 const 泛型（见限制 1）；index.ts 导出类型我没有需要的（Sig、ReadOnly、Prop、ReadSig、Model、VNode 已经都导出了）。
+  2. 过期的 hilt/*.d.ts 三个（限制 10）。
+  3. defineConditions 是否让引擎返回传入的对象（限制 6）。
