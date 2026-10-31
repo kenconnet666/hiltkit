@@ -1,0 +1,9 @@
+{
+  // 使用方：只看库的 .d.ts 和 hiltkit 的构建产物
+  "extends": "../../../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": { "@lib/ui": ["../dist/index.d.ts"] }
+  },
+  "include": ["./types.tsx"]
+}

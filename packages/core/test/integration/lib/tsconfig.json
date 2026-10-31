@@ -1,0 +1,11 @@
+{
+  // 发布组件库：只走 hiltkit 的构建产物（没有 @hiltkit/source 条件），和真实的库作者看到的一样
+  "extends": "../../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["./src/*.tsx"]
+}
