@@ -1,0 +1,21 @@
+| 项目 | node | chromium | firefox | webkit |
+| --- | --- | --- | --- | --- |
+| temporal | false | true | true | true |
+| getTextInfo | {"direction":"rtl"} | {"direction":"rtl"} | {"direction":"rtl"} | {"direction":"rtl"} |
+| getWeekInfo | {"firstDay":1,"weekend":[6,7]} | {"firstDay":1,"weekend":[6,7]} | {"firstDay":1,"weekend":[6,7]} | {"firstDay":1,"weekend":[6,7]} |
+| getHourCycles | ["h23"] | ["h23"] | ["h23","h12"] | ["h23"] |
+| durationFormat | true | true | true | true |
+| timeZones | 418 | 418 | 445 | 444 |
+| resolvedZone | Asia/Singapore | Asia/Singapore | Asia/Singapore | Asia/Singapore |
+| shanghai | 2026年11月1日 00:30 | 2026年11月1日 00:30 | 2026年11月1日 00:30 | 2026年11月1日 00:30 |
+| tokyoEn | Nov 1, 2026, 01:30 | Nov 1, 2026, 01:30 | Nov 1, 2026, 01:30 | Nov 1, 2026, 01:30 |
+| buddhist | 31 ต.ค. 2569 | 31 ต.ค. 2569 | 31 ต.ค. 2569 | 31 ต.ค. 2569 |
+| badZone | 不支持：Invalid time zone specified: Mars/Base | 不支持：Invalid time zone specified: Mars/Base | 不支持：invalid time zone: Mars/Base | 不支持：invalid time zone: Mars/Base |
+| badLocale | 不支持：Incorrect locale information provided | 不支持：Invalid language tag: not_a_locale | 不支持：invalid language tag: "not_a_locale" | 不支持：invalid language tag: not_a_locale |
+| plainDateUtcBug | 10/30/2026 | 10/30/2026 | 10/30/2026 | 10/30/2026 |
+| relative | 昨天 | 昨天 | 昨天 | 昨天 |
+| list | 甲、乙和丙 | 甲、乙和丙 | 甲、乙和丙 | 甲、乙和丙 |
+| currency | ¥1,234.50 | ¥1,234.50 | ¥1,234.50 | ¥1,234.50 |
+| usPerNewDateFormat | 178.26 | 150.33 | 13.33 | 143.33 |
+| usPerCachedFormat | 2.51 | 2.77 | 2.67 | 2.67 |
+| usPerNewNumberFormat | 25.62 | 17 | 3.33 | 6.67 |
