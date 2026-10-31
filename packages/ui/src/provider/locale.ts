@@ -15,6 +15,7 @@ import {
   type ContextKey,
   type ReadSig,
 } from 'hiltkit';
+import type { Theme } from '../theme/define';
 import type { MessagePack } from './messages';
 
 /** 12 或 24 小时制。h11、h24 几乎没人用，不收 */
@@ -32,6 +33,10 @@ export interface LocaleState {
   readonly explicitWeekStart: ReadSig<WeekDay | undefined>;
   readonly calendar: ReadSig<string | undefined>;
   readonly currency: ReadSig<string | undefined>;
+  /** 主题。没写时是 undefined：用 :root 上的默认值，也就是亮色 */
+  readonly theme: ReadSig<Theme | undefined>;
+  /** 按下时的波纹 */
+  readonly ripple: ReadSig<boolean>;
   /** 语言包，外层在前 */
   readonly packs: ReadSig<readonly MessagePack[]>;
 }
@@ -80,11 +85,18 @@ export const rootState: LocaleState = {
   explicitWeekStart: none,
   calendar: none,
   currency: none,
+  theme: none,
+  ripple: () => true,
   packs: () => [],
 };
 export const LocaleContext: ContextKey<LocaleState> = createContext<LocaleState>(rootState);
 /** 当前的状态（内部用）。对外是 useLocale */
 export const useLocaleState = (): LocaleState => inject(LocaleContext);
+
+/** 当前主题。外面没有写 theme 时是 undefined */
+export const useTheme = (): ReadSig<Theme | undefined> => useLocaleState().theme;
+/** 波纹开关（内部用），组件用 useRipple */
+export const useRippleEnabled = (): ReadSig<boolean> => useLocaleState().ripple;
 
 /** 语言的文字方向。阿拉伯文、希伯来文是 rtl */
 export function directionOf(locale: string): TextDirection {

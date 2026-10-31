@@ -1,6 +1,11 @@
 // Provider 的类型用例：正例要通过，@ts-expect-error 必须真的报错。纳入 pnpm typecheck
 import { sig } from 'hiltkit';
 import {
+  Button,
+  darkTheme,
+  defineTheme,
+  lightTheme,
+  navyTheme,
   Provider,
   defineMessages,
   useFormat,
@@ -25,6 +30,25 @@ export const good = (
     <Provider dir="rtl" hourCycle="h23" weekStart={1} calendar="buddhist" currency="CNY">
       <p>内容</p>
     </Provider>
+  </>
+);
+
+export const themed = (
+  <>
+    <Provider theme={navyTheme} ripple={false} />
+    <Provider theme={() => darkTheme} />
+    <Provider theme={defineTheme(lightTheme, { name: 'x', colors: { accent: '#000000' } })} />
+    {/* @ts-expect-error 主题要用 defineTheme 建 */}
+    <Provider theme="dark" />
+    {/* @ts-expect-error 自建主题不能写不存在的 token */}
+    {defineTheme(lightTheme, { name: 'x', colors: { nope: '#000' } })}
+    <Button variant="primary" size="lg" ripple={false} disabled onClick={() => {}}>
+      保存
+    </Button>
+    {/* @ts-expect-error 没有这个外观 */}
+    <Button variant="nope" />
+    {/* @ts-expect-error 没有这个尺寸 */}
+    <Button size="xl" />
   </>
 );
 

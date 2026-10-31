@@ -1,6 +1,7 @@
 export { Provider, type ProviderProps } from './Provider';
 export {
   useLocale,
+  useTheme,
   type HourCycle,
   type LocaleReaders,
   type TextDirection,

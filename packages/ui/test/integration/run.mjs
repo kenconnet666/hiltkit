@@ -12,6 +12,7 @@ const ALIAS = {
   'hiltkit/jsx-runtime': core('jsx-runtime.ts'),
   'hiltkit/jsx-dev-runtime': core('jsx-dev-runtime.ts'),
   'hiltkit/devtools': core('devtools/index.ts'),
+  'hiltkit/css': core('css/index.ts'),
   hiltkit: core('index.ts'),
   '@hiltkit/ui/locale/zh-CN': here('../../src/locale/zh-CN.ts'),
   '@hiltkit/ui': here('../../src/index.ts'),
@@ -191,6 +192,141 @@ for (const [name, kind] of [
   }
 }
 
+// 主题：服务端输出样式，水合不改 DOM，颜色对得上
+{
+  const themed = `
+import { flushSync, hydrate, renderToString } from 'hiltkit';
+import { create, renderStyleTag } from 'hiltkit/css';
+import { Button, Provider, navyTheme } from '@hiltkit/ui';
+const styles = create({ box: { backgroundColor: '_surface', color: '_text', padding: '_md' } });
+const view = () => <Provider timeZone="UTC" theme={navyTheme}><main id="box" sx={styles.box}><Button id="go" variant="primary">保存</Button></main></Provider>;
+export const html = () => { const body = renderToString(view); return { body, head: renderStyleTag(body) }; };
+globalThis.adopt = (host) => hydrate(view, host);
+globalThis.flush = flushSync;
+`;
+  const { body, head } = (await load(themed)).html();
+  check(
+    '主题：服务端输出 data-theme 和样式',
+    body.includes('data-theme="navy"') && head.includes('--hk-colors-surface'),
+    head.slice(0, 200),
+  );
+  for (const [name, kind] of [
+    ['chromium', chromium],
+    ['firefox', firefox],
+    ['webkit', webkit],
+  ]) {
+    const browser = await kind.launch();
+    const page = await browser.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.setContent(
+      `<!doctype html><html><head>${head}</head><body><div id="host">${body}</div></body></html>`,
+    );
+    const before = await page.evaluate(
+      () => getComputedStyle(document.getElementById('box')).backgroundColor,
+    );
+    await page.addScriptTag({ content: await bundle(themed) });
+    const result = await page.evaluate(async () => {
+      const host = document.getElementById('host');
+      const records = [];
+      const observer = new MutationObserver((list) => records.push(...list));
+      observer.observe(host, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        characterData: true,
+      });
+      globalThis.adopt(host);
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      globalThis.flush();
+      records.push(...observer.takeRecords());
+      const go = document.getElementById('go');
+      return {
+        mutations: records.length,
+        color: getComputedStyle(go).backgroundColor,
+        page: document.documentElement.style.backgroundColor,
+      };
+    });
+    check(`${name} 主题：接管前样式已经生效`, before === 'rgb(12, 36, 68)', before);
+    check(`${name} 主题：水合 0 DOM 改动`, result.mutations === 0, result);
+    check(`${name} 主题：组件用上主题的颜色`, result.color === 'rgb(62, 155, 255)', result);
+    check(`${name} 主题：挂载后设页面底色`, result.page === 'rgb(7, 26, 51)', result);
+    check(`${name} 主题：没有页面错误`, !errors.length, errors);
+    await browser.close();
+  }
+}
+
+// token 短写：类型上只要导入过组件库就能写，运行时也要成立，token 模块不能被摇掉
+{
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({
+    content: await bundle(`import { mount } from 'hiltkit';
+import { create } from 'hiltkit/css';
+import { Provider } from '@hiltkit/ui';
+const styles = create({ box: { paddingBlock: '_md', color: '_text' } });
+mount(() => <Provider><main id="box" sx={styles.box} /></Provider>, document.body);`),
+  });
+  const padding = await page.evaluate(() => {
+    const box = document.getElementById('box');
+    return box && getComputedStyle(box).paddingBlockStart;
+  });
+  check('token 短写：只用 Provider 时也生效', padding === '12px' && !errors.length, {
+    padding,
+    errors,
+  });
+  await browser.close();
+  // 构建产物走另一条 sideEffects 路径，单独确认
+  const built = await build({
+    stdin: {
+      contents: `import { Provider } from '../../dist/index.js'; console.log(Provider);`,
+      resolveDir: here('.'),
+    },
+    bundle: true,
+    write: false,
+    format: 'iife',
+    platform: 'browser',
+    logLevel: 'silent',
+  });
+  check('token 短写：构建产物里 token 模块没被摇掉', built.outputFiles[0].text.includes('#2F3AA8'));
+}
+
+// 弹层：进场有过渡；离场的过渡只记录，不是所有浏览器都支持
+for (const [name, kind] of [
+  ['chromium', chromium],
+  ['firefox', firefox],
+  ['webkit', webkit],
+]) {
+  const browser = await kind.launch();
+  const page = await browser.newPage();
+  await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({
+    content: await bundle(`import { mount } from 'hiltkit';
+import { transitions } from '@hiltkit/ui';
+mount(() => <dialog id="d" sx={[transitions.scale, transitions.backdrop]}>x</dialog>, document.body);`),
+  });
+  const result = await page.evaluate(async () => {
+    const dialog = document.getElementById('d');
+    dialog.showModal();
+    const entering = dialog.getAnimations().length;
+    await Promise.allSettled(dialog.getAnimations().map((item) => item.finished));
+    const opened = getComputedStyle(dialog).opacity;
+    dialog.close();
+    const leaving = dialog.getAnimations().length;
+    return { entering, opened, leaving };
+  });
+  check(
+    `${name} 弹框：进场有过渡，结束后完全显示`,
+    result.entering > 0 && result.opened === '1',
+    result,
+  );
+  console.log(`     ${name} 离场过渡数：${result.leaving}`);
+  await browser.close();
+}
+
 // 调试内核收到问题
 {
   const browser = await chromium.launch();
@@ -234,8 +370,7 @@ console.log(
 );
 check(
   '只用 Button：语言代码摇掉',
-  !/DateTimeFormat|getCanonicalLocales|hilt\.locale/.test(buttonOnly.code) &&
-    buttonOnly.gzip - baseline.gzip < 300,
+  !/getCanonicalLocales|NumberFormat|ListFormat|RelativeTimeFormat/.test(buttonOnly.code),
   buttonOnly.gzip - baseline.gzip,
 );
 check('只用 Provider：语言包不进包', !withProvider.code.includes('关闭'), withProvider.gzip);

@@ -315,7 +315,7 @@ pnpm exec hiltkit-devtools record start
 | `attrs`    | 属性从哪来：最终值、原始写法、class/style 的各层和合并它们的组件 |
 | `set`      | 改信号的值，默认关闭                                             |
 
-**问题编号：** `HILT001` 只取一次（`{count()}`），`HILT002` 水合不一致，`HILT003` effect 抛错，`HILT004` 服务端没设时区，`HILT005` 语言或时区写错，`HILT006` 日期格式不对，`HILT007` 金额没有币种。
+**问题编号：** `HILT001` 只取一次（`{count()}`），`HILT002` 水合不一致，`HILT003` effect 抛错，`HILT004` 服务端没设时区，`HILT005` 语言或时区写错，`HILT006` 日期格式不对，`HILT007` 金额没有币种，`HILT008` 自建主题对比度不够。
 
 组件库上报问题用 `reportIssue(编号, 说明, 修法)`。
 
@@ -399,7 +399,39 @@ declare module '@hiltkit/ui' {
 
 **DOM：** 最外层和写了 `locale`、`dir` 的 Provider 会放一个 `display: contents` 的 `div` 带 `lang`、`dir`，不影响布局。有严格 CSP（禁止行内样式属性）的服务端渲染页面要注意。
 
-**还没做：** 主题；弹层传送到 body 后的 `lang`、`dir`（做弹层组件时处理）；相对时间自动刷新。
+**主题：** 内置 `lightTheme`（默认）、`darkTheme`、`navyTheme`，用 `theme` 属性设置。切换时子树不重建，只换变量。
+
+```tsx
+const brand = defineTheme(lightTheme, { name: 'brand', colors: { accent: '#0B6E4F' } });
+<Provider theme={brand} />;
+```
+
+只写主色时，悬停色、主色上的文字色、链接色、焦点框都会算出来。对比度不够时上报 `HILT008`。
+
+**token 直接写在样式里：** 导入组件库就有补全，写错或用错组都报错。短写按属性找组，要跨组写 `'_durations.fast'`；值里夹着 token 时用模板字符串和 `t`。
+
+```tsx
+const styles = create({
+  row: { color: '_textSecondary', borderBottomColor: '_borderWeak', paddingBlock: '_sm', borderRadius: '_sm' },
+  fade: { transition: \`opacity \${t.durations.enter} \${t.easings.enter}\` },
+});
+```
+
+| 组             | 取值                                                                                                                                                                                                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `colors`       | `canvas`、`surface`、`elevated`、`text`、`textSecondary`、`textDisabled`、`borderWeak`、`border`、`borderStrong`、`fillHover`、`fillSelected`、`accent`、`accentHover`、`onAccent`、`accentText`、`focus`、`ok`、`warn`、`bad`、`onBad`、`overlay`、`chart1` 到 `chart5` |
+| `space`        | `none`、`xxs`、`xs`、`sm`、`md`、`lg`、`xl`、`xxl`、`xxxl`                                                                                                                                                                                                               |
+| `radii`        | `none`、`xs`、`sm`、`md`、`lg`、`full`                                                                                                                                                                                                                                   |
+| `sizes`        | `controlSm`、`controlMd`、`controlLg`                                                                                                                                                                                                                                    |
+| `borderWidths` | `none`、`hairline`、`thin`、`thick`                                                                                                                                                                                                                                      |
+| `fontSizes`    | `xs`、`sm`、`md`、`lg`、`xl`、`xxl`                                                                                                                                                                                                                                      |
+| `fontWeights`  | `regular`、`medium`                                                                                                                                                                                                                                                      |
+| `durations`    | `press`、`fast`、`exit`、`enter`、`drawer`、`ripple`                                                                                                                                                                                                                     |
+| `easings`      | `standard`、`enter`、`exit`                                                                                                                                                                                                                                              |
+
+**波纹和动效：** `Button` 自带波纹：按住时一直在，松开才淡出，键盘按 Enter、空格时从中心扩散。`<Provider ripple={false}>` 全局关闭，组件的 `ripple` 属性单独覆盖；自己的组件用 `useRipple` 和 `rippleStyles.host`。弹层用原生 `dialog` 配 `transitions.scale`、`transitions.slide`、`transitions.backdrop`。开启“减少动态效果”时，时长 token 都变成 0。
+
+**还没做：** 弹层传送到 body 后的 `lang`、`dir`（做弹层组件时处理）；相对时间自动刷新。
 
 ## 已知代价
 

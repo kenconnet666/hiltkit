@@ -9,9 +9,19 @@
  * 属性遵循框架规则：传值只取一次，传函数或 sig 才是活的。写错的语言标签、时区不会让页面崩掉：
  * 上报问题（HILT005），回退到上一层。
  *
- * 只管语言相关的设置。路由、请求、权限这些不放进来，各有各的上下文，用不到就摇掉。
+ * 只管语言和主题。路由、请求、权限这些不放进来，各有各的上下文，用不到就摇掉。
  */
-import { derived, provide, read, reportIssue, type Child, type Prop, type ReadSig } from 'hiltkit';
+import {
+  derived,
+  effect,
+  provide,
+  read,
+  reportIssue,
+  type Child,
+  type Prop,
+  type ReadSig,
+} from 'hiltkit';
+import type { Theme } from '../theme/define';
 import { dateFormatter } from './intl-cache';
 import {
   LocaleContext,
@@ -42,6 +52,10 @@ export interface ProviderProps {
   calendar?: Prop<string | undefined>;
   /** format.currency 默认的币种，如 CNY。不写时继承上层 */
   currency?: Prop<string | undefined>;
+  /** 主题：lightTheme、darkTheme、navyTheme 或 defineTheme 的结果。不写时继承上层，最外层是亮色 */
+  theme?: Prop<Theme | undefined>;
+  /** 按下时的波纹。不写时继承上层，默认开启 */
+  ripple?: Prop<boolean | undefined>;
   children?: Child;
 }
 
@@ -88,6 +102,8 @@ export function Provider(props: ProviderProps) {
     explicitWeekStart: inherited(props.weekStart, parent.explicitWeekStart),
     calendar: inherited(props.calendar, parent.calendar),
     currency: inherited(props.currency, parent.currency),
+    theme: inherited(props.theme, parent.theme),
+    ripple: inherited(props.ripple, parent.ripple),
     packs:
       messages === undefined
         ? parent.packs
@@ -97,17 +113,44 @@ export function Provider(props: ProviderProps) {
           }),
   };
   provide(LocaleContext, state);
-  // 只有最外层、以及写了 locale 或 dir 的才放元素：这一点在创建时就定了，语言变化不会让子树重建。
+  const isRoot = parent === rootState;
+  // 页面底色在容器外面，只有最外层负责，而且只在挂载后写：服务端的 html 不归组件管
+  if (isRoot && props.theme !== undefined) paintDocument(state.theme);
+  // 只有最外层、以及写了 locale、dir、theme 的才放元素：这一点在创建时就定了，语言、主题变化不会让子树重建。
   // 最外层总是放，服务端和客户端的结构才确定
-  if (parent !== rootState && props.locale === undefined && props.dir === undefined)
+  if (
+    !isRoot &&
+    props.locale === undefined &&
+    props.dir === undefined &&
+    props.theme === undefined
+  ) {
     return props.children;
+  }
+  const scheme = () => state.theme()?.colorScheme;
+  const common = {
+    lang: locale,
+    dir: () => state.explicitDir() ?? directionOf(locale()),
+    style: () => ({ display: 'contents', colorScheme: scheme() }),
+    'data-theme': () => state.theme()?.name,
+  };
+  if (props.theme === undefined) return <div {...common}>{props.children}</div>;
   return (
-    <div
-      lang={locale}
-      dir={() => state.explicitDir() ?? directionOf(locale())}
-      style={{ display: 'contents' }}
-    >
+    <div {...common} sx={() => state.theme()?.style as never}>
       {props.children}
     </div>
   );
+}
+
+/** 页面底色和原生控件的配色方案跟着主题走 */
+function paintDocument(theme: ReadSig<Theme | undefined>): void {
+  effect(() => {
+    const current = theme();
+    const root = document.documentElement.style;
+    root.backgroundColor = current?.colors.canvas ?? '';
+    root.colorScheme = current?.colorScheme ?? '';
+    return () => {
+      root.backgroundColor = '';
+      root.colorScheme = '';
+    };
+  });
 }

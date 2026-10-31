@@ -11,7 +11,11 @@
     "directory": "packages/ui"
   },
   "sideEffects": [
-    "./test/**"
+    "./test/**",
+    "./src/index.ts",
+    "./src/theme/tokens.ts",
+    "./dist/index.js",
+    "./dist/theme/tokens.js"
   ],
   "files": [
     "dist"
