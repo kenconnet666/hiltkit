@@ -18,13 +18,16 @@ export {
   onCleanup,
   onError,
   provide,
+  reportIssue,
   untrack,
   warnings,
+  type ContextKey,
 } from './reactivity/kernel';
 export { raw, snapshot } from './reactivity/state';
 export {
   derived,
   effect,
+  isServerRendering,
   isSig,
   model,
   read,
@@ -36,6 +39,7 @@ export {
   type Sig,
   type SigFactory,
 } from './reactivity/sig';
+export { isHydrating } from './hydration';
 export { merge } from './render/merge';
 export { registerStyles } from './render/props';
 export { Boundary, Portal, dynamic, when } from './render/control';

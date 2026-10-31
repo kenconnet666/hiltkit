@@ -23,7 +23,7 @@
     "changeset": "changeset",
     "release:version": "changeset version",
     "release:publish": "pnpm build && pnpm check:packages && changeset publish",
-    "test:integration": "pnpm build && pnpm --filter hiltkit test:integration"
+    "test:integration": "pnpm build && pnpm --filter hiltkit test:integration && pnpm --filter @hiltkit/ui test:integration"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",

@@ -309,9 +309,15 @@ importers:
 
   packages/ui:
     devDependencies:
+      esbuild:
+        specifier: 'catalog:'
+        version: 0.28.2
       hiltkit:
         specifier: workspace:^
         version: link:../core
+      playwright:
+        specifier: 'catalog:'
+        version: 1.64.1
       tsdown:
         specifier: 'catalog:'
         version: 0.23.4(publint@0.3.25)(typescript@7.0.2)

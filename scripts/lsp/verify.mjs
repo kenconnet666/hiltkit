@@ -11,7 +11,8 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const SERVER_NAME = 'hiltkit_lsp';
 const DOCS_MAIN = 'apps/docs/src/main.tsx';
-const BUTTON = 'packages/ui/src/button.tsx';
+const BUTTON = 'packages/ui/src/button/Button.tsx';
+const PROVIDER = 'packages/ui/src/provider/Provider.tsx';
 const NODE_CONFIG = 'vitest.config.ts';
 const TEMP = 'packages/ui/src/__lsp_verify__.tsx';
 
@@ -61,14 +62,14 @@ try {
 
   const definition = await call('definitions', {
     filePath: DOCS_MAIN,
-    ...locate(DOCS_MAIN, 'import { Button }', 9),
+    ...locate(DOCS_MAIN, 'import { Provider', 9),
   });
   const target = definition.items[0]?.filePath ?? '';
   check('跳转定义：跨包到源码，不是 dist', target.startsWith('packages/ui/src/'), target);
 
   const references = await call('references', {
-    filePath: BUTTON,
-    ...locate(BUTTON, 'function Button', 9),
+    filePath: PROVIDER,
+    ...locate(PROVIDER, 'export function Provider', 16),
   });
   check(
     '查找引用：跨包找到使用处',

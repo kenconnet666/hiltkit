@@ -11,6 +11,9 @@ export const setHydrating = (value: boolean): void => {
   hydrating = value;
 };
 
+/** 正在接管服务端输出：这时读到的值要和服务端一致，只有浏览器才知道的值等挂载后再用 */
+export const isHydrating = (): boolean => hydrating;
+
 /** 下一个要认领的节点 */
 export let cursor: Node | null = null;
 export const setCursor = (node: Node | null): void => {

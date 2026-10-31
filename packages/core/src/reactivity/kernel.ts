@@ -88,6 +88,7 @@ export interface DevHooks {
   flushed(): void;
   error(error: unknown, from: unknown): void;
   setupRead(): void;
+  issue(code: string, message: string, fix: string): void;
   mismatch(expected: string, actual: unknown): void;
   field(node: SignalNode<any>, key: unknown): void;
   shell(shell: unknown, cell: unknown): void;
@@ -240,6 +241,15 @@ function warnSetupRead(): void {
   if (!diagnostics.setupReads) return;
   warnings.push(new Error().stack);
   devHooks?.setupRead();
+}
+
+/**
+ * 上报一个使用问题：控制台警告一次，装了调试内核时进问题清单。给组件库用：
+ * 比如语言标签写错了，页面照常显示（回退到上一层），但开发者要看得到。
+ */
+export function reportIssue(code: string, message: string, fix: string): void {
+  console.warn(`[${code}] ${message} ${fix}`);
+  devHooks?.issue(code, message, fix);
 }
 
 /** 可写的信号。写入先记到 pendingValue，真正生效要等依赖它的节点来读，这样同一轮多次写入只算一次 */

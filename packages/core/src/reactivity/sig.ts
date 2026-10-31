@@ -217,6 +217,8 @@ export function derived(read: () => any, write?: (value: any) => void): any {
   return () => cell.value;
 }
 let serverMode = false;
+/** 正在服务端渲染：组件库据此避开只有浏览器才知道的东西（时区、窗口大小） */
+export const isServerRendering = (): boolean => serverMode;
 /** 服务端渲染期间打开：effect 不执行 */
 export const setServerMode = (value: boolean): void => {
   serverMode = value;

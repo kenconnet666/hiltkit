@@ -7,5 +7,10 @@
     "customConditions": ["@hiltkit/source"]
   },
   "include": ["packages/*/src", "packages/*/test", "apps/*/src"],
-  "exclude": ["packages/core/src/vite", "packages/core/test/integration/lib", "**/dist"]
+  "exclude": [
+    "packages/core/src/vite",
+    "packages/core/test/integration/lib",
+    "packages/ui/test/consumer",
+    "**/dist"
+  ]
 }

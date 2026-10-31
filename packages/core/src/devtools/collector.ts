@@ -227,6 +227,9 @@ export const installCollector = (): void =>
         },
       );
     },
+    issue(code: string, message: string, fix: string) {
+      issue(code, message, fix, instanceDetail(current));
+    },
     setupRead() {
       issue(
         'HILT001',

@@ -19,7 +19,7 @@
   "overrides": [
     {
       // 测试要故意写反例、拼任意代码
-      "files": ["packages/core/test/**"],
+      "files": ["packages/*/test/**"],
       "rules": {
         "no-unused-vars": "off",
         "no-unused-expressions": "off",
