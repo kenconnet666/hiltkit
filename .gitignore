@@ -8,5 +8,7 @@ dist/
 coverage/
 .vite/
 .vitest-attachments/
+.e2e/
+packages/core/test/integration/fuzz/failures/
 *.tsbuildinfo
 *.log

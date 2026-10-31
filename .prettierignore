@@ -3,3 +3,5 @@ dist/
 coverage/
 pnpm-lock.yaml
 .changeset/*.md
+# 负例：故意写的语法错误（调用结果赋值），解析器不认
+packages/core/test/types/core.tsx

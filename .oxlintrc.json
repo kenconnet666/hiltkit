@@ -8,7 +8,34 @@
     "typescript/switch-exhaustiveness-check": [
       "error",
       { "considerDefaultExhaustiveForUnions": true }
-    ]
+    ],
+    // Sig 的方法第一次取用时就绑定了，onClick={on.toggle} 是支持的写法
+    "typescript/unbound-method": "off",
+    // 框架要把任意值写进 DOM 和 HTML，转字符串的规则和浏览器一致，是有意的
+    "typescript/no-base-to-string": "off",
+    // 内核里 activeSub = this 是登记当前节点，不是别名
+    "typescript/no-this-alias": "off"
   },
-  "ignorePatterns": ["experiments/**", "**/dist/**", "coverage/**"]
+  "overrides": [
+    {
+      // 测试要故意写反例、拼任意代码
+      "files": ["packages/core/test/**"],
+      "rules": {
+        "no-unused-vars": "off",
+        "no-unused-expressions": "off",
+        "typescript/restrict-template-expressions": "off",
+        "typescript/require-array-sort-compare": "off",
+        "typescript/no-implied-eval": "off",
+        "typescript/no-redundant-type-constituents": "off",
+        "typescript/no-useless-empty-export": "off"
+      }
+    }
+  ],
+  // core.tsx 里有故意写的语法反例（调用结果赋值），解析器不认
+  "ignorePatterns": [
+    "experiments/**",
+    "**/dist/**",
+    "coverage/**",
+    "packages/core/test/types/core.tsx"
+  ]
 }
