@@ -315,7 +315,9 @@ pnpm exec hiltkit-devtools record start
 | `attrs`    | 属性从哪来：最终值、原始写法、class/style 的各层和合并它们的组件 |
 | `set`      | 改信号的值，默认关闭                                             |
 
-**问题编号：** `HILT001` 只取一次（`{count()}`），`HILT002` 水合不一致，`HILT003` effect 抛错。
+**问题编号：** `HILT001` 只取一次（`{count()}`），`HILT002` 水合不一致，`HILT003` effect 抛错，`HILT004` 服务端没设时区，`HILT005` 语言或时区写错，`HILT006` 日期格式不对，`HILT007` 金额没有币种。
+
+组件库上报问题用 `reportIssue(编号, 说明, 修法)`。
 
 **边界：**
 
@@ -330,6 +332,74 @@ pnpm exec hiltkit-devtools record start
 - `why` 给的写入位置是 Vite 转换后的行号，可能和源文件差几行。一次录制最多记 2000 个调用栈。
 - `attrs` 的分层只覆盖 `class`、`style`、`sx`。其他属性被 `merge` 覆盖后看不到被盖掉的值。
 - 还没做：样式规则追踪（`styles`）、内存泄漏检查、浏览器插件。
+
+## 组件库：Provider
+
+`@hiltkit/ui` 的 `Provider` 给一棵子树设语言、时区和文案。可以嵌套，只覆盖写了的属性，其余实时继承上层。
+
+```tsx
+import { Provider, useFormat, useLocale, useMessages, commonMessages } from '@hiltkit/ui';
+import zhCN from '@hiltkit/ui/locale/zh-CN';
+
+const locale = sig('zh-CN');
+<Provider locale={locale} timeZone="Asia/Shanghai" messages={zhCN}>
+  <App />
+</Provider>;
+```
+
+| 属性        | 说明                         | 不写时                             |
+| ----------- | ---------------------------- | ---------------------------------- |
+| `locale`    | BCP 47 语言标签              | 继承上层，最外层是 `en-US`         |
+| `timeZone`  | IANA 时区                    | 继承上层，最外层用运行环境的时区   |
+| `messages`  | 语言包，可以只翻一部分       | 继承上层，最后是组件自带的英文     |
+| `dir`       | `ltr`、`rtl`                 | 写了 `locale` 按语言，否则继承上层 |
+| `hourCycle` | `h12`、`h23`                 | 继承上层，最后按语言               |
+| `weekStart` | 1（周一）到 7（周日）        | 继承上层，最后按语言               |
+| `calendar`  | 日历，如 `buddhist`          | 继承上层，最后由语言决定           |
+| `currency`  | `format.currency` 默认的币种 | 继承上层                           |
+
+属性遵循框架规则：传值只取一次，传函数或 `sig` 才是活的。
+
+**格式化：** 写在函数里才跟着语言变。空值返回空字符串。
+
+```tsx
+const format = useFormat();
+<td>{() => format.date(order.createdAt)}</td>;
+format.time(value);
+format.dateTime(value);
+format.relative(value);
+format.number(1234.5);
+format.currency(19.9, 'CNY');
+format.list(['甲', '乙']);
+```
+
+**时刻和墙上时间：** `Date`、时间戳、带 `Z` 或时差的字符串是时刻，按当前时区换算。没有时区的字符串（`'2026-10-31'`、`'2026-10-31T14:30'`、`'14:30'`）是墙上时间，写的是几点就显示几点。Temporal 的对象用 `toString()` 传。
+
+**读设置：** `useLocale()` 返回读取函数：`locale`、`timeZone`、`dir`、`hourCycle`、`weekStart`、`calendar`、`currency`。
+
+**组件文案：** 每个组件自带英文默认值，语言包只覆盖要翻译的部分。
+
+```tsx
+const messages = defineMessages('dialog', {
+  close: 'Close',
+  remove: (name: string) => `Remove ${name}?`,
+});
+const t = useMessages(messages);
+<button aria-label={() => t().close} />;
+
+// 让语言包检查这组文案：少翻、写错名字都报错
+declare module '@hiltkit/ui' {
+  interface MessageCatalog {
+    dialog: typeof messages.defaults;
+  }
+}
+```
+
+**服务端渲染：** 服务端不知道用户在哪，要传 `timeZone`（用户资料或 Cookie 里的）。没传时按 UTC 输出并上报 `HILT004`，接管本身不改 DOM，挂载后换成浏览器时区，只有用到时区的绑定更新一次，用户会看到时间跳一下。
+
+**DOM：** 最外层和写了 `locale`、`dir` 的 Provider 会放一个 `display: contents` 的 `div` 带 `lang`、`dir`，不影响布局。有严格 CSP（禁止行内样式属性）的服务端渲染页面要注意。
+
+**还没做：** 主题；弹层传送到 body 后的 `lang`、`dir`（做弹层组件时处理）；相对时间自动刷新。
 
 ## 已知代价
 
@@ -401,9 +471,9 @@ Chromium，生产构建，串行运行，机器上有后台负载（IDE 等）�
 
 在仓库根目录运行：
 
-| 命令                    | 内容                                                                         |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| `pnpm typecheck`        | 全仓库类型，含 `packages/core/test/types` 的正例和负例                       |
-| `pnpm test`             | Vitest 单元测试（真浏览器）                                                  |
-| `pnpm test:integration` | 集成测试：行为、水合、组件库发布、真实组件迁移、随机测试、内存泄漏、调试工具 |
-| `pnpm check:packages`   | 发布产物的 `exports` 检查                                                    |
+| 命令                    | 内容                                                                                                                                   |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm typecheck`        | 全仓库类型，含 `packages/core/test/types` 的正例和负例                                                                                 |
+| `pnpm test`             | Vitest 单元测试（真浏览器）                                                                                                            |
+| `pnpm test:integration` | 集成测试：行为、水合、组件库发布、真实组件迁移、随机测试、内存泄漏、调试工具；组件库的服务端渲染、时区水合、摇树、只走构建产物的使用方 |
+| `pnpm check:packages`   | 发布产物的 `exports` 检查                                                                                                              |

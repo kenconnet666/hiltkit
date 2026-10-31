@@ -11,7 +11,7 @@
 | `apps/docs`     | `@hiltkit/docs` | 文档站，不发布，用框架和组件库自己搭建 |
 | `experiments`   | 不是工作区成员  | 选型实验和实测数据                     |
 
-框架的 API 见 [docs/api.md](docs/api.md)。组件库和文档站还是骨架，下一阶段设计。
+框架的 API 见 [docs/api.md](docs/api.md)。组件库已有 `Provider`（语言、时区、文案），主题和组件外观下一阶段设计。
 
 ## 常用命令
 

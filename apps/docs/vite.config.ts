@@ -1,6 +1,6 @@
 import { defaultClientConditions, defineConfig } from 'vite';
 // 配置文件在 Node 里运行，这里按路径取插件：不用先构建框架
-import { hiltDevtools, hiltHot } from '../../packages/core/src/vite/index';
+import { hiltDevtools, hiltHot } from '../../packages/core/src/vite/index.ts';
 
 export default defineConfig({
   oxc: { jsx: { runtime: 'automatic', importSource: 'hiltkit' } },
