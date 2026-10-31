@@ -28,7 +28,9 @@ export interface Theme {
   readonly style: readonly unknown[];
 }
 
-const base = create({ root: { color: '_text', fontFamily: '_sans', fontSize: '_md' } });
+const base = create({
+  root: { color: '_text', fontFamily: '_sans', fontSize: '_md', lineHeight: '_normal' },
+});
 
 function buildTheme(name: string, palette: Palette): Theme {
   // 第一次用到才生成规则：导入了不用的主题不插样式

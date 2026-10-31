@@ -291,7 +291,7 @@ mount(() => <Provider><main id="box" sx={styles.box} /></Provider>, document.bod
     platform: 'browser',
     logLevel: 'silent',
   });
-  check('token 短写：构建产物里 token 模块没被摇掉', built.outputFiles[0].text.includes('#2F3AA8'));
+  check('token 短写：构建产物里 token 模块没被摇掉', built.outputFiles[0].text.includes('#1A5CAD'));
 }
 
 // 弹层：进场有过渡；离场的过渡只记录，不是所有浏览器都支持
@@ -306,7 +306,7 @@ for (const [name, kind] of [
   await page.addScriptTag({
     content: await bundle(`import { mount } from 'hiltkit';
 import { transitions } from '@hiltkit/ui';
-mount(() => <dialog id="d" sx={[transitions.scale, transitions.backdrop]}>x</dialog>, document.body);`),
+mount(() => <dialog id="d" sx={[transitions.fade, transitions.backdrop]}>x</dialog>, document.body);`),
   });
   const result = await page.evaluate(async () => {
     const dialog = document.getElementById('d');

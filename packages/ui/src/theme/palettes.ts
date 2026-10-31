@@ -2,8 +2,9 @@
  * 三套内置主题的取值：亮色（默认）、暗色、深蓝。
  *
  * 只放数据，不依赖样式引擎：`contrast.test.ts` 在这里逐项算对比度，改色值时测试会把关。
- * 风格：克制。颜色只留给要紧的操作；层次靠极细的线和留白，投影只给浮层。
- * 边框和悬停是半透明的，同一个 ink 在不同底色上都合适（Grafana 也这么做）。
+ * 风格：交互状态和浮层层级借鉴 MUI，略带暖意的中性色和细线分层借鉴 Claude Desktop，其余按“专业、克制”取舍：
+ * 主色和危险色比 MUI 深、饱和度低；暗色的实底按钮用中等明度配白字，不用 MUI 那种大块的浅色。
+ * 边框和悬停是半透明的，同一个 ink 在不同底色上都合适。
  */
 
 /** 所有主题都有的颜色 token。名字不变，只换值：组件不需要知道当前是哪个主题 */
@@ -22,6 +23,8 @@ export interface ThemeColors {
   textDisabled: string;
   /** 分隔线 */
   borderWeak: string;
+  /** 按钮的描边：按钮靠文字识别，边框可以淡一些 */
+  borderSubtle: string;
   /** 输入框等控件的边框：要看得清边界，对比度不低于 3 */
   border: string;
   /** 控件悬停时的边框 */
@@ -30,6 +33,8 @@ export interface ThemeColors {
   fillHover: string;
   /** 选中行、按下时叠的淡色 */
   fillSelected: string;
+  /** 禁用的实底按钮的底色、禁用的描边 */
+  fillDisabled: string;
   /** 品牌色：主按钮、当前项。一屏尽量只有一处大面积使用 */
   accent: string;
   /** 主按钮悬停 */
@@ -44,8 +49,12 @@ export interface ThemeColors {
   ok: string;
   /** 状态：警告 */
   warn: string;
-  /** 状态：错误、危险操作 */
+  /** 状态：错误，用在文字和图标上 */
   bad: string;
+  /** 危险按钮的底色 */
+  badFill: string;
+  /** 危险按钮悬停 */
+  badFillHover: string;
   /** 危险按钮上的文字 */
   onBad: string;
   /** 模态遮罩 */
@@ -59,8 +68,10 @@ export interface ThemeColors {
 }
 
 export interface ThemeShadows {
-  /** 浮层投影 */
+  /** 菜单、下拉（MUI 的 elevation 8） */
   popup: string;
+  /** 弹框、抽屉（MUI 的 elevation 24） */
+  modal: string;
 }
 
 export interface Palette {
@@ -69,77 +80,115 @@ export interface Palette {
   readonly shadows: ThemeShadows;
 }
 
+/** 同一种墨色的各档透明度 */
 const ink = (
   rgb: string,
-  weak: number,
-  medium: number,
-  strong: number,
-  hover: number,
-  selected: number,
-) => ({
-  borderWeak: `rgba(${rgb}, ${weak})`,
-  border: `rgba(${rgb}, ${medium})`,
-  borderStrong: `rgba(${rgb}, ${strong})`,
-  fillHover: `rgba(${rgb}, ${hover})`,
-  fillSelected: `rgba(${rgb}, ${selected})`,
-});
+  alpha: {
+    borderWeak: number;
+    borderSubtle: number;
+    border: number;
+    borderStrong: number;
+    fillHover: number;
+    fillSelected: number;
+    fillDisabled: number;
+  },
+) =>
+  Object.fromEntries(
+    Object.entries(alpha).map(([name, value]) => [name, `rgba(${rgb}, ${value})`]),
+  ) as Record<keyof typeof alpha, string>;
+
+/**
+ * 投影的几何沿用 MUI 的三层（本影、半影、环境光）。strength 是透明度的倍数：
+ * 亮底上原值太脏，减轻；暗底上投影本来就不明显，保持原值。
+ */
+const elevation = (rgb: string, strength = 1) => {
+  const shade = (alpha: number) => `rgba(${rgb}, ${Math.round(alpha * strength * 100) / 100})`;
+  const layers = (umbra: string, penumbra: string, ambient: string) =>
+    `${umbra} ${shade(0.2)}, ${penumbra} ${shade(0.14)}, ${ambient} ${shade(0.12)}`;
+  return {
+    popup: layers('0 5px 5px -3px', '0 8px 10px 1px', '0 3px 14px 2px'),
+    modal: layers('0 11px 15px -7px', '0 24px 38px 3px', '0 9px 46px 8px'),
+  };
+};
 
 export const lightPalette: Palette = {
   colorScheme: 'light',
   colors: {
-    canvas: '#F4F5F6',
+    canvas: '#F7F6F3',
     surface: '#FFFFFF',
     elevated: '#FFFFFF',
-    text: '#17181C',
-    textSecondary: '#5C5F68',
-    textDisabled: '#8B8E96',
-    ...ink('23, 24, 28', 0.12, 0.46, 0.62, 0.04, 0.08),
-    accent: '#2F3AA8',
-    accentHover: '#262F8C',
+    text: '#1F1E1C',
+    textSecondary: '#63615C',
+    textDisabled: '#9C9A94',
+    // 输入框边框比 MUI 的 0.23 深：要满足 3:1
+    ...ink('31, 30, 28', {
+      borderWeak: 0.12,
+      borderSubtle: 0.24,
+      border: 0.48,
+      borderStrong: 0.87,
+      fillHover: 0.04,
+      fillSelected: 0.08,
+      fillDisabled: 0.12,
+    }),
+    accent: '#1A5CAD',
+    accentHover: '#144A8E',
     onAccent: '#FFFFFF',
-    accentText: '#2F3AA8',
-    focus: '#2F3AA8',
-    ok: '#0A7350',
+    accentText: '#1A5CAD',
+    focus: '#1A5CAD',
+    ok: '#2E7D32',
     warn: '#A35A00',
-    bad: '#C4203A',
+    bad: '#B3261E',
+    badFill: '#B3261E',
+    badFillHover: '#8C1D18',
     onBad: '#FFFFFF',
-    overlay: 'rgba(23, 24, 28, 0.28)',
-    chart1: '#2F3AA8',
-    chart2: '#1E7F9E',
+    overlay: 'rgba(31, 30, 28, 0.24)',
+    chart1: '#1A5CAD',
+    chart2: '#00838F',
     chart3: '#C26A1B',
     chart4: '#7A4FB5',
-    chart5: '#2B8A5B',
+    chart5: '#2E7D32',
   },
-  shadows: { popup: '0 6px 20px rgba(23, 24, 28, 0.08)' },
+  shadows: elevation('31, 30, 28', 0.6),
 };
 
 export const darkPalette: Palette = {
   colorScheme: 'dark',
   colors: {
-    canvas: '#111215',
-    surface: '#18191D',
-    elevated: '#212226',
-    text: '#E6E7EA',
-    textSecondary: '#A0A2AA',
-    textDisabled: '#74767E',
-    ...ink('230, 231, 234', 0.12, 0.42, 0.56, 0.06, 0.11),
-    accent: '#9AA3F2',
-    accentHover: '#B2B9F6',
-    onAccent: '#14163A',
-    accentText: '#9AA3F2',
-    focus: '#9AA3F2',
-    ok: '#5CC79A',
-    warn: '#E8AE4A',
-    bad: '#F0808A',
-    onBad: '#2A0A0E',
-    overlay: 'rgba(0, 0, 0, 0.5)',
-    chart1: '#8E9AF0',
+    canvas: '#1C1B1A',
+    surface: '#242321',
+    elevated: '#2C2B29',
+    text: '#ECEAE5',
+    textSecondary: '#B0ADA6',
+    textDisabled: '#807D77',
+    ...ink('236, 234, 229', {
+      borderWeak: 0.12,
+      borderSubtle: 0.26,
+      border: 0.46,
+      borderStrong: 0.87,
+      fillHover: 0.08,
+      fillSelected: 0.16,
+      fillDisabled: 0.12,
+    }),
+    accent: '#2F72C9',
+    // 白字要够对比度，悬停只能往深走
+    accentHover: '#2A69BC',
+    onAccent: '#FFFFFF',
+    accentText: '#8DBBF0',
+    focus: '#8DBBF0',
+    ok: '#66BB6A',
+    warn: '#FFA726',
+    bad: '#E57373',
+    badFill: '#BF3F3A',
+    badFillHover: '#A93531',
+    onBad: '#FFFFFF',
+    overlay: 'rgba(0, 0, 0, 0.56)',
+    chart1: '#64B5F6',
     chart2: '#5CC3DC',
     chart3: '#E8A552',
     chart4: '#B79AF0',
-    chart5: '#6BCF9C',
+    chart5: '#81C784',
   },
-  shadows: { popup: '0 6px 20px rgba(0, 0, 0, 0.4)' },
+  shadows: elevation('0, 0, 0'),
 };
 
 export const navyPalette: Palette = {
@@ -152,7 +201,15 @@ export const navyPalette: Palette = {
     textSecondary: '#8FA9C9',
     textDisabled: '#6C86A6',
     // 线也带蓝：用白色半透明的话，深蓝底上会发灰
-    ...ink('122, 170, 230', 0.24, 0.56, 0.72, 0.1, 0.18),
+    ...ink('122, 170, 230', {
+      borderWeak: 0.24,
+      borderSubtle: 0.4,
+      border: 0.56,
+      borderStrong: 0.87,
+      fillHover: 0.1,
+      fillSelected: 0.18,
+      fillDisabled: 0.14,
+    }),
     accent: '#3E9BFF',
     accentHover: '#65B0FF',
     onAccent: '#04162C',
@@ -161,7 +218,9 @@ export const navyPalette: Palette = {
     ok: '#4CC9A0',
     warn: '#F0B44C',
     bad: '#F47C7C',
-    onBad: '#2A0A0E',
+    badFill: '#C8443F',
+    badFillHover: '#B53A36',
+    onBad: '#FFFFFF',
     overlay: 'rgba(3, 8, 18, 0.55)',
     chart1: '#4A93EE',
     chart2: '#6FD3E8',
@@ -169,5 +228,5 @@ export const navyPalette: Palette = {
     chart4: '#A9A0F5',
     chart5: '#4CC9A0',
   },
-  shadows: { popup: '0 6px 20px rgba(2, 8, 20, 0.48)' },
+  shadows: elevation('2, 8, 20'),
 };

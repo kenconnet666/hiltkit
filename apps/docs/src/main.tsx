@@ -67,9 +67,9 @@ const styles = create({
     backgroundColor: '_elevated',
     borderWidth: '_hairline',
     borderStyle: 'solid',
-    borderColor: '_borderStrong',
+    borderColor: '_borderWeak',
     borderRadius: '_md',
-    boxShadow: '_popup',
+    boxShadow: '_modal',
   },
   drawer: {
     width: '320px',
@@ -85,8 +85,8 @@ const styles = create({
     borderWidth: '_none',
     borderInlineStartWidth: '_hairline',
     borderInlineStartStyle: 'solid',
-    borderInlineStartColor: '_borderStrong',
-    boxShadow: '_popup',
+    borderInlineStartColor: '_borderWeak',
+    boxShadow: '_modal',
   },
 });
 
@@ -179,7 +179,7 @@ function App() {
         </div>
         <dialog
           ref={(el: HTMLDialogElement | null) => (dialog = el)}
-          sx={[styles.dialog, transitions.scale, transitions.backdrop]}
+          sx={[styles.dialog, transitions.fade, transitions.backdrop]}
         >
           <p>按住按钮看波纹，松开才淡出。</p>
           <Button onClick={() => dialog?.close()}>关闭</Button>

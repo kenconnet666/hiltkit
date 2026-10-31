@@ -44,7 +44,7 @@ describe('token 直写', () => {
   test('短写按属性找到对应的组，落到 CSS 变量上', () => {
     const { host, unmount } = render(() => <i sx={styles.box} />);
     const style = getComputedStyle(host.querySelector('i')!);
-    expect(style.borderTopLeftRadius).toBe('3px');
+    expect(style.borderTopLeftRadius).toBe('2px');
     expect(style.paddingBlockStart).toBe('12px');
     expect(style.fontSize).toBe('16px');
     expect(style.color).toBe(rgb(lightTheme.colors.text));
@@ -267,8 +267,23 @@ describe('按钮', () => {
     const style = getComputedStyle(host.querySelector('button')!);
     expect(style.backgroundColor).toBe(rgb(navyTheme.colors.accent));
     expect(style.color).toBe(rgb(navyTheme.colors.onAccent));
-    expect(style.height).toBe('40px');
-    expect(style.borderTopLeftRadius).toBe('3px');
+    expect(style.height).toBe('42px');
+    expect(style.borderTopLeftRadius).toBe('2px');
+    unmount();
+  });
+
+  test('禁用：底色和文字换成禁用色，不靠整体变淡', () => {
+    const { host, unmount } = render(() => (
+      <Provider theme={lightTheme}>
+        <Button variant="primary" disabled>
+          保存
+        </Button>
+      </Provider>
+    ));
+    const style = getComputedStyle(host.querySelector('button')!);
+    expect(style.opacity).toBe('1');
+    expect(style.color).toBe(rgb(lightTheme.colors.textDisabled));
+    expect(style.backgroundColor).not.toBe(rgb(lightTheme.colors.accent));
     unmount();
   });
 });
@@ -276,7 +291,7 @@ describe('按钮', () => {
 describe('弹层进出场', () => {
   test('打开原生 dialog：进场有过渡，结束后停在打开状态', async () => {
     const { host, unmount } = render(() => (
-      <dialog sx={[transitions.scale, transitions.backdrop]}>x</dialog>
+      <dialog sx={[transitions.fade, transitions.backdrop]}>x</dialog>
     ));
     const dialog = host.querySelector('dialog')!;
     dialog.showModal();

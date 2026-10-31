@@ -23,49 +23,53 @@ export interface ButtonProps extends HtmlProps<'button'> {
   ripple?: Prop<boolean | undefined>;
 }
 
+const transition = ['background-color', 'border-color', 'color']
+  .map((name) => `${name} ${t.durations.fast} ${t.easings.standard}`)
+  .join(', ');
+
 const styles = create({
   root: {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '_xs',
-    borderWidth: '_hairline',
+    minWidth: '_buttonMin',
+    borderWidth: '_thin',
     borderStyle: 'solid',
     borderRadius: '_sm',
     fontFamily: '_sans',
     fontWeight: '_medium',
     lineHeight: '_tight',
     whiteSpace: 'nowrap',
-    cursor: { default: 'pointer', _disabled: 'not-allowed' },
-    opacity: { default: 1, _disabled: '_disabled' },
+    cursor: { default: 'pointer', _disabled: 'default' },
     outlineWidth: { default: 0, _focusVisible: '_thick' },
     outlineStyle: 'solid',
     outlineColor: '_focus',
     outlineOffset: '_thin',
-    transition: `background-color ${t.durations.fast} ${t.easings.standard}, border-color ${t.durations.fast} ${t.easings.standard}`,
+    transition,
   },
-  sm: { height: '_controlSm', paddingInline: '_sm', fontSize: '_xs' },
-  md: { height: '_controlMd', paddingInline: '_md', fontSize: '_sm' },
-  lg: { height: '_controlLg', paddingInline: '_lg', fontSize: '_md' },
+  sm: { height: '_controlSm', paddingInline: '_md', fontSize: '_sm' },
+  md: { height: '_controlMd', paddingInline: '_lg', fontSize: '_md' },
+  lg: { height: '_controlLg', paddingInline: '_xl', fontSize: '_md' },
   primary: {
-    color: '_onAccent',
-    borderColor: '_accent',
-    backgroundColor: { default: '_accent', _hover: '_accentHover', _disabled: '_accent' },
+    color: { default: '_onAccent', _disabled: '_textDisabled' },
+    borderColor: { default: '_accent', _hover: '_accentHover', _disabled: 'transparent' },
+    backgroundColor: { default: '_accent', _hover: '_accentHover', _disabled: '_fillDisabled' },
   },
   secondary: {
-    color: '_text',
-    borderColor: { default: '_border', _hover: '_borderStrong', _disabled: '_border' },
+    color: { default: '_text', _disabled: '_textDisabled' },
+    borderColor: { default: '_borderSubtle', _hover: '_border', _disabled: '_fillDisabled' },
     backgroundColor: { default: 'transparent', _hover: '_fillHover', _disabled: 'transparent' },
   },
   ghost: {
-    color: '_text',
+    color: { default: '_text', _disabled: '_textDisabled' },
     borderColor: 'transparent',
     backgroundColor: { default: 'transparent', _hover: '_fillHover', _disabled: 'transparent' },
   },
   danger: {
-    color: '_onBad',
-    borderColor: '_bad',
-    backgroundColor: '_bad',
+    color: { default: '_onBad', _disabled: '_textDisabled' },
+    borderColor: { default: '_badFill', _hover: '_badFillHover', _disabled: 'transparent' },
+    backgroundColor: { default: '_badFill', _hover: '_badFillHover', _disabled: '_fillDisabled' },
   },
 });
 

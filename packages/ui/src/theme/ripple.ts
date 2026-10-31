@@ -4,6 +4,7 @@
  *   const ripple = useRipple(() => props.ripple);
  *   <button sx={rippleStyles.host} {...ripple}>
  *
+ * 做法和 MUI 的 TouchRipple 一样，松开后边扩散边淡出；更短更淡（450 ms、峰值 0.2，MUI 是 550 ms、0.3），边缘不抢眼。
  * 颜色跟随文字，实底和描边按钮上都合适。时长取主题 token：开启“减少动态效果”时是 0，这时不出波纹。
  * 用 Web Animations 而不是样式表：波纹元素是运行时插进去的，按住和松开要分两段控制。
  * 默认开启，`<Provider ripple={false}>` 全局关，组件的 ripple 属性单独覆盖。
@@ -15,13 +16,17 @@ import { useRippleEnabled } from '../provider/locale';
 /** 宿主元素要的样式：波纹相对它定位，超出圆角的部分裁掉 */
 export const rippleStyles = create({ host: { position: 'relative', overflow: 'hidden' } });
 
-const FADE_MS = 160;
+/** 淡出比扩散快一些：松开之后不拖泥带水 */
+const FADE_RATIO = 0.7;
 
-/** 主题里的时长：`360ms` -> 360。样式没加载时当作 0，不出波纹 */
-function rippleDuration(host: Element): number {
-  const text = getComputedStyle(host).getPropertyValue('--hk-durations-ripple').trim();
-  const value = parseFloat(text);
-  return Number.isFinite(value) ? value : 0;
+/** 主题里的时长和曲线。样式没加载时时长当作 0，不出波纹 */
+function rippleMotion(host: Element): { duration: number; easing: string } {
+  const style = getComputedStyle(host);
+  const duration = parseFloat(style.getPropertyValue('--hk-durations-ripple'));
+  return {
+    duration: Number.isFinite(duration) ? duration : 0,
+    easing: style.getPropertyValue('--hk-easings-standard').trim() || 'ease-in-out',
+  };
 }
 
 const isDisabled = (host: Element) => host.matches(':disabled, [aria-disabled="true"]');
@@ -34,7 +39,7 @@ export function startRipple(event: PointerEvent | KeyboardEvent): void {
   // 按住键不放的重复事件不算；右键不算
   if (keyboard && (event.repeat || (event.key !== 'Enter' && event.key !== ' '))) return;
   if (!keyboard && (event as PointerEvent).button !== 0) return;
-  const duration = rippleDuration(host);
+  const { duration, easing } = rippleMotion(host);
   if (!duration) return;
 
   const rect = host.getBoundingClientRect();
@@ -45,13 +50,15 @@ export function startRipple(event: PointerEvent | KeyboardEvent): void {
   const ripple = document.createElement('span');
   ripple.setAttribute('aria-hidden', 'true');
   ripple.dataset.ripple = '';
-  ripple.style.cssText = `position:absolute;left:${x - radius}px;top:${y - radius}px;width:${radius * 2}px;height:${radius * 2}px;border-radius:50%;pointer-events:none;background:color-mix(in srgb, currentColor 14%, transparent);`;
+  ripple.style.cssText = `position:absolute;left:${x - radius}px;top:${y - radius}px;width:${radius * 2}px;height:${radius * 2}px;border-radius:50%;pointer-events:none;background:currentColor;`;
   host.append(ripple);
-  const expand = ripple.animate([{ transform: 'scale(0)' }, { transform: 'scale(1)' }], {
-    duration,
-    easing: 'cubic-bezier(0.2, 0, 0, 1)',
-    fill: 'forwards',
-  });
+  ripple.animate(
+    [
+      { transform: 'scale(0)', opacity: 0.06 },
+      { transform: 'scale(1)', opacity: 0.2 },
+    ],
+    { duration, easing, fill: 'forwards' },
+  );
 
   const targets: [string, EventTarget][] = keyboard
     ? [
@@ -65,15 +72,10 @@ export function startRipple(event: PointerEvent | KeyboardEvent): void {
       ];
   const release = () => {
     for (const [type, target] of targets) target.removeEventListener(type, release);
-    // 点得很快时也要把扩散播完，否则波纹一闪就没了
-    void expand.finished
-      .catch(() => {})
-      .then(
-        () =>
-          ripple.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FADE_MS, fill: 'forwards' })
-            .finished,
-      )
-      .catch(() => {})
+    // 只写终点：从当前的透明度开始淡出。扩散还在继续，点得很快时波纹也不会一闪就没
+    void ripple
+      .animate({ opacity: 0 }, { duration: duration * FADE_RATIO, easing, fill: 'forwards' })
+      .finished.catch(() => {})
       .finally(() => ripple.remove());
   };
   for (const [type, target] of targets) target.addEventListener(type, release);
