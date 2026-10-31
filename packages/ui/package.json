@@ -1,0 +1,36 @@
+{
+  "name": "@hiltkit/ui",
+  "version": "0.0.0",
+  "description": "hiltkit 的组件库",
+  "type": "module",
+  "license": "MIT",
+  "author": "kenconnet666",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kenconnet666/hiltkit.git",
+    "directory": "packages/ui"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "@hiltkit/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsdown && tsc -p tsconfig.build.json"
+  },
+  "peerDependencies": {
+    "hiltkit": "workspace:^"
+  },
+  "devDependencies": {
+    "hiltkit": "workspace:^",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  // 在 Node 里运行的配置文件，和页面代码的环境分开
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ES2023"],
+    "types": ["node"]
+  },
+  "include": ["*.config.ts", "packages/*/*.config.ts", "apps/*/*.config.ts"]
+}

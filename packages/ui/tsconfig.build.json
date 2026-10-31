@@ -1,0 +1,11 @@
+{
+  // 不开源码条件：依赖的是 hiltkit 构建出来的类型，和使用方看到的一样
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "emitDeclarationOnly": true
+  },
+  "include": ["src"]
+}

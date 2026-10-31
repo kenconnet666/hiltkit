@@ -1,0 +1,39 @@
+# experiments/ 是选型实验，有自己的工作区和依赖，不进这里
+packages:
+  - packages/*
+  - apps/*
+
+# 共享依赖的精确版本；各包用 "catalog:" 引用，升级只改这里
+catalog:
+  # 语言
+  typescript: 7.0.2
+  '@types/node': 26.6.6
+  # 框架内核
+  alien-signals: 3.2.1
+  csstype: 3.2.3
+  # 开发和构建
+  vite: 8.3.5
+  tsdown: 0.23.4
+  # 测试：DOM 行为都在真浏览器里跑
+  vitest: 5.0.5
+  '@vitest/browser-playwright': 5.0.5
+  playwright: 1.64.1
+  # 代码质量
+  oxlint: 1.90.0
+  oxlint-tsgolint: 7.0.2005
+  prettier: 3.9.10
+  '@prettier/plugin-oxc': 0.2.3
+  # AI 工具的语言服务（scripts/lsp）
+  '@modelcontextprotocol/sdk': 1.32.2
+  zod: 4.6.7
+  # 发布
+  '@changesets/cli': 3.0.3
+  publint: 0.3.25
+
+# 依赖版本只能来自 catalog，防止各包写出不同版本
+catalogMode: strict
+strictPeerDependencies: true
+
+# 只放行确实需要安装脚本的包，其余默认不执行
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,43 @@
+{
+  "name": "hiltkit-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=24.11 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @hiltkit/docs dev",
+    "build": "pnpm --filter \"./packages/*\" build",
+    "build:docs": "pnpm --filter @hiltkit/docs build",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "oxlint . --deny-warnings",
+    "format": "prettier --write . --cache --cache-strategy content",
+    "format:check": "prettier --check . --cache --cache-strategy content",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck",
+    "check:packages": "pnpm --filter \"./packages/*\" exec publint --strict",
+    "lsp:verify": "node scripts/lsp/verify.mjs",
+    "changeset": "changeset",
+    "release:version": "changeset version",
+    "release:publish": "pnpm build && pnpm check:packages && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "catalog:",
+    "@modelcontextprotocol/sdk": "catalog:",
+    "@prettier/plugin-oxc": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "playwright": "catalog:",
+    "prettier": "catalog:",
+    "publint": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

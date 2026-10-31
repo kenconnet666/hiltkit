@@ -1,0 +1,12 @@
+{
+  "name": "hiltkit",
+  "description": "仓库内的本地插件市场：只提供本项目的 Claude Code 插件",
+  "owner": { "name": "hiltkit" },
+  "plugins": [
+    {
+      "name": "hiltkit-lsp",
+      "source": "./hiltkit-lsp",
+      "description": "TS/TSX 原生 LSP：仓库固定的 TypeScript 7 语言服务器（tsc --lsp）"
+    }
+  ]
+}

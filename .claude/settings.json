@@ -1,0 +1,14 @@
+{
+  "enabledMcpjsonServers": ["hiltkit_lsp"],
+  "extraKnownMarketplaces": {
+    "hiltkit": {
+      "source": {
+        "source": "directory",
+        "path": "./.claude/marketplace"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "hiltkit-lsp@hiltkit": true
+  }
+}

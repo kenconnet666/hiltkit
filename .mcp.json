@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "hiltkit_lsp": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["scripts/lsp/server.mjs", "."]
+    }
+  }
+}

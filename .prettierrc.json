@@ -1,0 +1,16 @@
+{
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "plugins": ["@prettier/plugin-oxc"],
+  "overrides": [
+    {
+      "files": ["*.js", "*.jsx", "*.mjs", "*.cjs"],
+      "options": { "parser": "oxc" }
+    },
+    {
+      "files": ["*.ts", "*.tsx", "*.mts", "*.cts"],
+      "options": { "parser": "oxc-ts" }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "hiltkit-lsp",
+  "version": "1.0.0",
+  "description": "TS/TSX 原生 LSP：编辑后推送诊断，并提供 LSP 工具（定义、引用、悬停）。语言服务器是仓库 node_modules 里 TypeScript 7 的 tsc --lsp，结果与 pnpm typecheck 一致",
+  "author": { "name": "hiltkit" }
+}

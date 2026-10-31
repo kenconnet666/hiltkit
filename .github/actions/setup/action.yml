@@ -1,0 +1,14 @@
+name: Setup
+description: 安装 pnpm、Node（版本取自 .node-version）与依赖
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v6
+
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .node-version
+        cache: pnpm
+
+    - run: pnpm install --frozen-lockfile
+      shell: bash
