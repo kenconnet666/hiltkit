@@ -11,7 +11,7 @@
     "dev": "pnpm --filter @hiltkit/docs dev",
     "build": "pnpm --filter \"./packages/*\" build",
     "build:docs": "pnpm --filter @hiltkit/docs build",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
+    "typecheck": "tsc -p packages/core && tsc -p packages/ui && tsc -p apps/docs && tsc -p tsconfig.node.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "oxlint . --deny-warnings",

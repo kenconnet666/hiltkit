@@ -17,6 +17,12 @@ const LANGUAGE_IDS = {
   '.cts': 'typescript',
   '.tsx': 'typescriptreact',
 };
+/** 每个类型工程一个文件：打开它就会加载这个工程 */
+const PROJECT_ANCHORS = [
+  'packages/core/src/index.ts',
+  'packages/ui/src/index.ts',
+  'apps/docs/src/main.tsx',
+];
 const SEVERITIES = [undefined, 'error', 'warning', 'message', 'suggestion'];
 // LSP 的 CompletionItemKind 从 1 开始
 const COMPLETION_KINDS = [
@@ -251,16 +257,35 @@ export class TypeScriptWorkspace {
   }
 
   references(filePath, line, column, limit) {
-    return this.#at(filePath, line, column, async (server, params) => {
-      const items =
-        (await server.request('textDocument/references', {
-          ...params,
-          context: { includeDeclaration: true },
-        })) ?? [];
-      return {
-        total: items.length,
-        items: items.slice(0, limit).map((item) => this.#location(item)),
-      };
+    return this.#at(filePath, line, column, async (server, params, file) => {
+      const anchors = PROJECT_ANCHORS.map((path) => join(this.root, path)).filter(
+        (path) => path !== file,
+      );
+      const open = (path) => ({
+        textDocument: {
+          uri: pathToFileURL(path).href,
+          languageId: LANGUAGE_IDS[extname(path)],
+          version: 1,
+          text: readFileSync(path, 'utf8'),
+        },
+      });
+      // 服务器只在已加载的工程里找。各包是独立工程，都打开一个文件，才能跨包找到使用处
+      for (const path of anchors) server.notify('textDocument/didOpen', open(path));
+      try {
+        const items =
+          (await server.request('textDocument/references', {
+            ...params,
+            context: { includeDeclaration: true },
+          })) ?? [];
+        return {
+          total: items.length,
+          items: items.slice(0, limit).map((item) => this.#location(item)),
+        };
+      } finally {
+        for (const path of anchors) {
+          server.notify('textDocument/didClose', { textDocument: open(path).textDocument });
+        }
+      }
     });
   }
 

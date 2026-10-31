@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.dev.json",
+  "include": ["src", "test"],
+  // src/vite 跑在 Node 里，归根目录的 tsconfig.node.json；integration/lib 专门测构建产物，由它自己的脚本检查
+  "exclude": ["src/vite", "test/integration/lib", "dist"]
+}

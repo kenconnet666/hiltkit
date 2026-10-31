@@ -7,7 +7,7 @@ node_modules/
 dist/
 coverage/
 .vite/
-.vitest-attachments/
+.vitest/
 .e2e/
 packages/core/test/integration/fuzz/failures/
 *.tsbuildinfo

@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.dev.json",
+  "include": ["src", "test"],
+  // test/consumer 只走构建产物，由集成测试检查
+  "exclude": ["test/consumer", "dist"]
+}

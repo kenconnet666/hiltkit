@@ -125,7 +125,25 @@ type AliasValues<V> = { readonly [Alias in ConditionName]?: StyleValue<V> };
  */
 export type StyleObject = {
   readonly [K in keyof RawProps]?: StyleValue<PropertyValue<K>>;
-};
+} & { readonly [Element in PseudoElement]?: StyleObject };
+
+/**
+ * 伪元素的样式块：`'::backdrop': { backgroundColor: '_overlay' }`。
+ * 逐个列出而不是写成 `::${string}` 索引签名，理由同上。
+ */
+export type PseudoElement =
+  | '::before'
+  | '::after'
+  | '::backdrop'
+  | '::placeholder'
+  | '::selection'
+  | '::marker'
+  | '::first-line'
+  | '::first-letter'
+  | '::file-selector-button'
+  | '::-webkit-scrollbar'
+  | '::-webkit-scrollbar-thumb'
+  | '::-webkit-scrollbar-track';
 
 /** 动态样式返回的属性：值在运行时才知道，接受任意字符串；允许 `--x` 自定义属性 */
 export type LooseStyleObject = {

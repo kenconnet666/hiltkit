@@ -1,0 +1,8 @@
+{
+  // 仓库内类型检查共用：各包之间解析到源码，不用先构建
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "customConditions": ["@hiltkit/source"]
+  }
+}

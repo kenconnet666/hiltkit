@@ -62,7 +62,7 @@ try {
 
   const definition = await call('definitions', {
     filePath: DOCS_MAIN,
-    ...locate(DOCS_MAIN, 'import { Provider', 9),
+    ...locate(DOCS_MAIN, '  Provider,', 2),
   });
   const target = definition.items[0]?.filePath ?? '';
   check('跳转定义：跨包到源码，不是 dist', target.startsWith('packages/ui/src/'), target);
@@ -79,7 +79,7 @@ try {
 
   const completions = await call('completions', {
     filePath: BUTTON,
-    ...locate(BUTTON, 'children }: ButtonProps', 0),
+    ...locate(BUTTON, '  children,', 2),
     prefix: 'chi',
   });
   check(
