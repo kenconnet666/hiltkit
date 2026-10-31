@@ -1,0 +1,6 @@
+{
+  // 使用方：不开 @hiltkit/source 条件，只看 hiltkit 和 @hiltkit/ui 的构建产物
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["./types.tsx"]
+}

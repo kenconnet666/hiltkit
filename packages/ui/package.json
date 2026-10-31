@@ -10,7 +10,9 @@
     "url": "git+https://github.com/kenconnet666/hiltkit.git",
     "directory": "packages/ui"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "./test/**"
+  ],
   "files": [
     "dist"
   ],
@@ -20,16 +22,24 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./locale/zh-CN": {
+      "@hiltkit/source": "./src/locale/zh-CN.ts",
+      "types": "./dist/locale/zh-CN.d.ts",
+      "default": "./dist/locale/zh-CN.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsdown && tsc -p tsconfig.build.json"
+    "build": "tsdown && tsc -p tsconfig.build.json",
+    "test:integration": "node test/integration/run.mjs"
   },
   "peerDependencies": {
     "hiltkit": "workspace:^"
   },
   "devDependencies": {
+    "esbuild": "catalog:",
     "hiltkit": "workspace:^",
+    "playwright": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:"
   }
