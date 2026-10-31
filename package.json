@@ -17,12 +17,13 @@
     "lint": "oxlint . --deny-warnings",
     "format": "prettier --write . --cache --cache-strategy content",
     "format:check": "prettier --check . --cache --cache-strategy content",
-    "check": "pnpm lint && pnpm format:check && pnpm typecheck",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm --filter hiltkit check:generated",
     "check:packages": "pnpm --filter \"./packages/*\" exec publint --strict",
     "lsp:verify": "node scripts/lsp/verify.mjs",
     "changeset": "changeset",
     "release:version": "changeset version",
-    "release:publish": "pnpm build && pnpm check:packages && changeset publish"
+    "release:publish": "pnpm build && pnpm check:packages && changeset publish",
+    "test:integration": "pnpm build && pnpm --filter hiltkit test:integration"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",

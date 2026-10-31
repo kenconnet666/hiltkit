@@ -4,7 +4,9 @@
     "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
-    "emitDeclarationOnly": true
+    "emitDeclarationOnly": true,
+    // vite/ 跑在 Node 里
+    "types": ["node"]
   },
   "include": ["src"]
 }

@@ -1,35 +1,49 @@
-// 骨架占位：只够验证工作区链路（类型、JSX、开发解析、构建）。框架实现从 experiments/18-plain 迁入时整体替换。
-
-/** JSX 产出的描述对象 */
-export interface VNode {
-  readonly type: string | ((props: Record<string, unknown>) => unknown);
-  readonly props: Record<string, unknown>;
-}
-
-function render(value: unknown, parent: Node): void {
-  if (value === null || value === undefined || typeof value === 'boolean') return;
-  if (Array.isArray(value)) {
-    for (const item of value) render(item, parent);
-    return;
-  }
-  if (typeof value === 'string' || typeof value === 'number') {
-    parent.appendChild(document.createTextNode(String(value)));
-    return;
-  }
-  const { type, props } = value as VNode;
-  if (typeof type === 'function') {
-    render(type(props), parent);
-    return;
-  }
-  const element = document.createElement(type);
-  for (const [key, item] of Object.entries(props)) {
-    if (key !== 'children') element.setAttribute(key, String(item));
-  }
-  render(props.children, element);
-  parent.appendChild(element);
-}
-
-/** 把视图渲染进容器 */
-export function mount(view: () => unknown, host: Element): void {
-  render(view(), host);
-}
+/**
+ * hiltkit 的公开入口。这张导出表就是框架的 API，文档见仓库的 `docs/api.md`。
+ *
+ * 三条规则：传函数才是活的，传值只取一次；带 `()` 读，写用方法；传有 `set` 的 `Sig` 才能写回。
+ *
+ * 模块分工（依赖方向从下往上）：
+ *   reactivity/  响应式：内核、深代理、Sig
+ *   attrs/       属性写到元素：规则表、class 和 style、双向绑定、分层
+ *   render/      描述对象 → DOM：元素、组件、动态段、列表、边界、懒加载
+ *   app/         应用实例：mount、hydrate、服务、useId
+ *   server/      描述对象 → HTML 字符串
+ * 单独入口：hiltkit/css（样式）、hiltkit/devtools（调试）、hiltkit/vite（开发插件）。
+ */
+export {
+  createContext,
+  flushSync,
+  inject,
+  onCleanup,
+  onError,
+  provide,
+  untrack,
+  warnings,
+} from './reactivity/kernel';
+export { raw, snapshot } from './reactivity/state';
+export {
+  derived,
+  effect,
+  isSig,
+  model,
+  read,
+  sig,
+  type Model,
+  type Prop,
+  type ReadOnly,
+  type ReadSig,
+  type Sig,
+  type SigFactory,
+} from './reactivity/sig';
+export { merge } from './render/merge';
+export { registerStyles } from './render/props';
+export { Boundary, Portal, dynamic, when } from './render/control';
+export { For } from './render/list';
+export { lazy, preloadLazy } from './render/lazy';
+export { hotRegister } from './render/hot';
+export { Custom, VNode, createElement } from './render/vnode';
+export { createService, useId } from './app/context';
+export { hydrate, mount } from './app/mount';
+export { renderToString } from './server/render';
+export type { Child } from './types/value';
