@@ -1,0 +1,41 @@
+core perf 2026-10-31 20:55  CPU load at start: 7%
+
+## 18-plain/vue-compare/gap-ssr.mjs --rounds=15
+## 1 万行列表（node v24.18.0，15 轮）
+
+| 版本 | 中位 ms | 最小 ms | 最大 ms | 每行 µs | HTML KB |
+| --- | --- | --- | --- | --- | --- |
+| 手写字符串 | 2.9 | 1.9 | 40.2 | 0.29 | 760 |
+| Vue 编译模板 | 4.4 | 2.5 | 28.1 | 0.44 | 847 |
+| Vue h() | 36.1 | 27.8 | 56.2 | 3.61 | 847 |
+| hilt | 26.6 | 19.4 | 64.0 | 2.66 | 760 |
+| hiltkit 正式包 | 36.1 | 17.4 | 73.1 | 3.61 | 760 |
+| hilt 只建 VNode | 4.0 | 2.1 | 52.0 | 0.40 | 0 |
+
+## 1 万个三层按钮组件
+
+| 版本 | 中位 ms | 最小 ms | 最大 ms | 每行 µs | HTML KB |
+| --- | --- | --- | --- | --- | --- |
+| Vue 编译模板 | 279.9 | 206.5 | 435.9 | 27.99 | 1102 |
+| Vue h() | 222.8 | 172.7 | 282.6 | 22.28 | 790 |
+| hilt | 61.8 | 32.6 | 69.9 | 6.18 | 790 |
+| hiltkit 正式包 | 68.6 | 38.5 | 89.4 | 6.86 | 790 |
+exit=0
+
+## 18-plain/vue-compare/gap-rows.mjs --rounds=9 --only=Vapor,Vue 3.5,hilt,hiltkit 正式包
+## 创建 1 万行（Chromium，每轮新页面，交替，9 轮）
+
+| 版本 | 脚本中位 ms | 脚本最小 | 脚本最大 | 含布局中位 ms | 含布局最小 | 含布局最大 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Vapor | 111 | 97 | 153 | 630 | 570 | 662 |
+| Vue 3.5 | 122 | 109 | 131 | 623 | 575 | 653 |
+| hilt | 145 | 130 | 157 | 644 | 625 | 691 |
+| hiltkit 正式包 | 149 | 132 | 174 | 670 | 621 | 760 |
+
+## 每行的 DOM 调用次数（建 1000 行）
+
+- Vapor：共 7.0；addEventListener 2.0，nodeValue= 2.0，cloneNode 1.0，className= 1.0，insertBefore 1.0
+- Vue 3.5：共 19.0；createElement 6.0，insertBefore 6.0，textContent= 3.0，addEventListener 2.0，className= 2.0
+- hilt：共 19.0；insertBefore 7.0，createElement 6.0，textContent= 2.0，addEventListener 2.0，createTextNode 1.0，setAttribute 1.0
+- hiltkit 正式包：共 19.0；insertBefore 7.0，createElement 6.0，textContent= 2.0，addEventListener 2.0，createTextNode 1.0，setAttribute 1.0
+exit=0
