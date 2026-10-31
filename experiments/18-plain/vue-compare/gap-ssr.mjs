@@ -120,6 +120,14 @@ const hiltVariant = async (name, patches) => {
   return import(`./.gap/${name}.mjs`);
 };
 const hilt = await hiltVariant('hilt');
+const coreCode = await plainBundle(plainSource, { server: true, alias: {
+  'hilt/jsx-runtime': here('../../../packages/core/src/jsx-runtime.ts'),
+  'hilt/jsx-dev-runtime': here('../../../packages/core/src/jsx-dev-runtime.ts'),
+  'hilt/css': here('../../../packages/core/src/css/index.ts'),
+  hilt: here('../../../packages/core/src/index.ts'),
+} });
+writeFileSync(here('./.gap/core.mjs'), coreCode);
+const core = await import('./.gap/core.mjs');
 const patchNames = arg('patches', '').split(',').filter(Boolean);
 const fast = patchNames.length ? await hiltVariant('fast', patchNames) : undefined;
 
@@ -149,6 +157,7 @@ await run([
   ['Vue 编译模板', vue.vueRows],
   ['Vue h()', vue.vueRowsH],
   ['hilt', hilt.hiltRows],
+  ['hiltkit 正式包', core.hiltRows],
   ...(fast ? [['hilt 优化', fast.hiltRows]] : []),
   ['hilt 只建 VNode', hilt.vnodesOnly],
 ]);
@@ -157,6 +166,7 @@ await run([
   ['Vue 编译模板', vue.vueButtons],
   ['Vue h()', vue.vueButtonsH],
   ['hilt', hilt.hiltButtons],
+  ['hiltkit 正式包', core.hiltButtons],
   ...(fast ? [['hilt 优化', fast.hiltButtons]] : []),
 ]);
 

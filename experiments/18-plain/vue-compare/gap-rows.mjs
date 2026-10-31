@@ -42,6 +42,13 @@ window.bench = makeBench({ clear, create(data) { for (const row of data) {
 } } });`;
 
 const rowsEntry = here('./rows.tsx');
+/** 正式包 packages/core：同一份用例，只换实现 */
+const CORE_ALIAS = {
+  'hilt/jsx-runtime': here('../../../packages/core/src/jsx-runtime.ts'),
+  'hilt/jsx-dev-runtime': here('../../../packages/core/src/jsx-dev-runtime.ts'),
+  'hilt/css': here('../../../packages/core/src/css/index.ts'),
+  hilt: here('../../../packages/core/src/index.ts'),
+};
 const VARIANTS = [
   ['手写 createElement', fromText(floorCreate)],
   ['手写 cloneNode', fromText(floorClone)],
@@ -49,6 +56,7 @@ const VARIANTS = [
   ['Vue 3.5', fromFile(here('../../05-compare/rows/vue/entry-vdom35.js'), buildOptions('vdom35'))],
   ['hilt', fromFile(rowsEntry, hiltBuild())],
   ['hilt +委托', fromFile(rowsEntry, hiltBuild(['delegate']))],
+  ['hiltkit 正式包', fromFile(rowsEntry, { jsx: 'automatic', jsxImportSource: 'hilt', alias: CORE_ALIAS })],
 ].filter(([name]) => !only.length || only.includes(name));
 
 const bundles = [];
