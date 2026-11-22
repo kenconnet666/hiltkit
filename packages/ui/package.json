@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "hiltkit 的组件库",
   "type": "module",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "kenconnet666",
   "repository": {
     "type": "git",

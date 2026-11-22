@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "细粒度响应的 Web 框架：标准 TS JSX，不需要编译插件",
   "type": "module",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "kenconnet666",
   "repository": {
     "type": "git",
